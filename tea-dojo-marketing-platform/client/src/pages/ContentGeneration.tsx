@@ -344,6 +344,36 @@ export default function ContentGeneration() {
     setError(null);
   };
 
+  // Go to a specific step (only allow going back to completed steps)
+  const goToStep = (stepId: number) => {
+    if (stepId < currentStep) {
+      // Going back - reset states appropriately
+      if (stepId === 1) {
+        // Going back to step 1 - keep the form data but reset theme and content
+        setThemeApproved(false);
+        setContentGenerated(false);
+        setGeneratedTheme(emptyTheme);
+        setGeneratedContent(emptyContent);
+        setGeneratedVideoScript(emptyVideoScript);
+      } else if (stepId === 2) {
+        // Going back to step 2 - keep theme but reset content
+        setThemeApproved(false);
+        setContentGenerated(false);
+        setGeneratedContent(emptyContent);
+        setGeneratedVideoScript(emptyVideoScript);
+      }
+      setCurrentStep(stepId);
+      setError(null);
+    }
+  };
+
+  // Go back one step
+  const goBack = () => {
+    if (currentStep > 1) {
+      goToStep(currentStep - 1);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard!");
@@ -431,21 +461,24 @@ CTA: ${generatedVideoScript.callToAction}
               {workflowSteps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
                   <div className="flex flex-col items-center">
-                    <div 
+                    <button 
+                      onClick={() => goToStep(step.id)}
+                      disabled={step.id >= currentStep}
                       className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                         currentStep > step.id 
-                          ? "bg-primary text-primary-foreground" 
+                          ? "bg-primary text-primary-foreground cursor-pointer hover:bg-primary/80 hover:scale-105" 
                           : currentStep === step.id 
-                            ? "bg-primary/20 text-primary border-2 border-primary" 
-                            : "bg-muted text-muted-foreground"
+                            ? "bg-primary/20 text-primary border-2 border-primary cursor-default" 
+                            : "bg-muted text-muted-foreground cursor-not-allowed"
                       }`}
+                      title={currentStep > step.id ? `Go back to ${step.title}` : ''}
                     >
                       {currentStep > step.id ? (
                         <Check className="w-5 h-5" />
                       ) : (
                         <step.icon className="w-5 h-5" />
                       )}
-                    </div>
+                    </button>
                     <span className={`mt-2 text-sm font-medium ${
                       currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
                     }`}>
@@ -708,8 +741,8 @@ CTA: ${generatedVideoScript.callToAction}
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="w-full"
-                          onClick={() => setCurrentStep(1)}
+                          className="w-full text-muted-foreground hover:text-foreground"
+                          onClick={goBack}
                         >
                           <ChevronLeft className="w-4 h-4 mr-1" />
                           Back to Campaign Setup
@@ -755,23 +788,34 @@ CTA: ${generatedVideoScript.callToAction}
                         </div>
 
                         {!contentGenerated ? (
-                          <Button 
-                            className="w-full bg-primary hover:bg-primary/90"
-                            onClick={handleGenerateContent}
-                            disabled={isGenerating}
-                          >
-                            {isGenerating ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Generating All Content...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="w-4 h-4 mr-2" />
-                                Generate All Content
-                              </>
-                            )}
-                          </Button>
+                          <div className="space-y-3">
+                            <Button 
+                              className="w-full bg-primary hover:bg-primary/90"
+                              onClick={handleGenerateContent}
+                              disabled={isGenerating}
+                            >
+                              {isGenerating ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Generating All Content...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-4 h-4 mr-2" />
+                                  Generate All Content
+                                </>
+                              )}
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="w-full text-muted-foreground hover:text-foreground"
+                              onClick={goBack}
+                            >
+                              <ChevronLeft className="w-4 h-4 mr-1" />
+                              Back to Theme Preview
+                            </Button>
+                          </div>
                         ) : (
                           <div className="space-y-3">
                             <div className="flex items-center gap-2 text-primary">
@@ -784,6 +828,15 @@ CTA: ${generatedVideoScript.callToAction}
                               onClick={resetWorkflow}
                             >
                               Start New Campaign
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="w-full text-muted-foreground hover:text-foreground"
+                              onClick={goBack}
+                            >
+                              <ChevronLeft className="w-4 h-4 mr-1" />
+                              Back to Theme Preview
                             </Button>
                           </div>
                         )}
