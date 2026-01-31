@@ -462,9 +462,9 @@ CTA: ${generatedVideoScript.callToAction}
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Panel - Configuration */}
-            <div className="lg:col-span-1 space-y-6">
+          <div className={`grid gap-8 ${contentGenerated ? 'lg:grid-cols-3' : 'lg:grid-cols-1 max-w-3xl mx-auto'}`}>
+            {/* Left Panel - Configuration (Full width when no content, 1/3 when content exists) */}
+            <div className={`${contentGenerated ? 'lg:col-span-1' : ''} space-y-6`}>
               <AnimatePresence mode="wait">
                 {currentStep === 1 && (
                   <motion.div
@@ -828,7 +828,8 @@ CTA: ${generatedVideoScript.callToAction}
               </AnimatePresence>
             </div>
 
-            {/* Right Panel - Content Preview */}
+            {/* Right Panel - Content Preview (Only shown when content is generated) */}
+            {contentGenerated && (
             <div className="lg:col-span-2">
               <Card className="h-full">
                 <CardHeader>
@@ -1104,6 +1105,7 @@ CTA: ${generatedVideoScript.callToAction}
                 </CardContent>
               </Card>
             </div>
+            )}
           </div>
         </div>
       </main>
