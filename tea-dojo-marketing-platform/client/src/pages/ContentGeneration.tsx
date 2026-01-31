@@ -427,7 +427,7 @@ CTA: ${generatedVideoScript.callToAction}
 
           {/* Workflow Progress */}
           <div className="mb-8">
-            <div className="flex items-center justify-between max-w-2xl">
+            <div className="flex items-center justify-center gap-0 max-w-2xl mx-auto">
               {workflowSteps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
                   <div className="flex flex-col items-center">
