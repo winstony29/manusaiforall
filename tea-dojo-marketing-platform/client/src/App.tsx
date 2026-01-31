@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import ContentGeneration from "./pages/ContentGeneration";
 import CalendarPage from "./pages/CalendarPage";
 import Campaigns from "./pages/Campaigns";
+import Help from "./pages/Help";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -19,6 +20,7 @@ function Router() {
       <Route path={"/dashboard/generate"} component={ContentGeneration} />
       <Route path={"/dashboard/calendar"} component={CalendarPage} />
       <Route path={"/dashboard/campaigns"} component={Campaigns} />
+      <Route path={"/dashboard/help"} component={Help} />
       <Route path={"/generate"} component={ContentGeneration} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

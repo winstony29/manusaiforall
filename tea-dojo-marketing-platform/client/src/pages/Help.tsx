@@ -1,5 +1,5 @@
 /**
- * Help & Support Page - BrewLab Marketing Platform
+ * Help & Support Page - Drinknovate Marketing Platform
  * Comprehensive help center with troubleshooting, how-tos, and support resources
  */
 
@@ -189,7 +189,7 @@ const troubleshootingGuides = [
       {
         step: 1,
         action: "Check internet speed",
-        details: "Run a speed test. BrewLab works best with connections of 5+ Mbps."
+        details: "Run a speed test. Drinknovate works best with connections of 5+ Mbps."
       },
       {
         step: 2,
@@ -246,7 +246,7 @@ const troubleshootingGuides = [
 const howToGuides = [
   {
     id: "getting-started",
-    title: "Getting Started with BrewLab",
+    title: "Getting Started with Drinknovate",
     icon: Zap,
     difficulty: "Beginner",
     timeEstimate: "10 minutes",
@@ -468,7 +468,7 @@ const faqItems = [
   },
   {
     question: "What social media platforms are supported?",
-    answer: "BrewLab currently supports content creation for Instagram, Facebook, Twitter/X, LinkedIn, and TikTok. Each platform has optimized content formats and best practices built into our AI generation system.",
+    answer: "Drinknovate currently supports content creation for Instagram, Facebook, Twitter/X, LinkedIn, and TikTok. Each platform has optimized content formats and best practices built into our AI generation system.",
     category: "Platforms"
   },
   {
@@ -483,7 +483,7 @@ const faqItems = [
   },
   {
     question: "How do I connect my social media accounts?",
-    answer: "Go to Settings > Connected Accounts. Click 'Connect' next to each platform you want to link. You'll be redirected to authorize BrewLab to post on your behalf. Once connected, you can publish directly from the platform.",
+    answer: "Go to Settings > Connected Accounts. Click 'Connect' next to each platform you want to link. You'll be redirected to authorize Drinknovate to post on your behalf. Once connected, you can publish directly from the platform.",
     category: "Account"
   },
   {
@@ -593,7 +593,7 @@ export default function Help() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Help & Support</h1>
-            <p className="text-muted-foreground">Find answers, troubleshoot issues, and learn how to get the most out of BrewLab</p>
+            <p className="text-muted-foreground">Find answers, troubleshoot issues, and learn how to get the most out of Drinknovate</p>
           </div>
 
           {/* Search Bar */}
@@ -713,7 +713,7 @@ export default function Help() {
                         <Zap className="w-5 h-5 text-primary" />
                         <div>
                           <div className="font-medium">Getting Started</div>
-                          <div className="text-sm text-muted-foreground">New to BrewLab? Start here</div>
+                          <div className="text-sm text-muted-foreground">New to Drinknovate? Start here</div>
                         </div>
                         <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
                       </button>
@@ -760,7 +760,7 @@ export default function Help() {
                 <CheckCircle className="h-4 w-4" />
                 <AlertTitle>All Systems Operational</AlertTitle>
                 <AlertDescription>
-                  All BrewLab services are running normally. Last checked: {new Date().toLocaleTimeString()}
+                  All Drinknovate services are running normally. Last checked: {new Date().toLocaleTimeString()}
                 </AlertDescription>
               </Alert>
 
@@ -907,7 +907,7 @@ export default function Help() {
                 <Book className="h-4 w-4" />
                 <AlertTitle>Step-by-Step Guides</AlertTitle>
                 <AlertDescription>
-                  Learn how to use every feature of BrewLab with our comprehensive tutorials.
+                  Learn how to use every feature of Drinknovate with our comprehensive tutorials.
                 </AlertDescription>
               </Alert>
 
@@ -978,7 +978,7 @@ export default function Help() {
                 <MessageCircle className="h-4 w-4" />
                 <AlertTitle>Frequently Asked Questions</AlertTitle>
                 <AlertDescription>
-                  Find quick answers to the most common questions about BrewLab.
+                  Find quick answers to the most common questions about Drinknovate.
                 </AlertDescription>
               </Alert>
 
