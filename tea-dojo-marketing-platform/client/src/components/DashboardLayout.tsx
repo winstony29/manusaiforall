@@ -1,5 +1,5 @@
 /**
- * Dashboard Layout - BrewLab Marketing Platform
+ * Dashboard Layout - Drinknovate Marketing Platform
  * Sidebar navigation with main content area
  */
 
@@ -16,8 +16,7 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  ChevronLeft,
-  ExternalLink
+  ChevronLeft
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -26,10 +25,10 @@ interface DashboardLayoutProps {
 }
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", external: false },
-  { href: "/dashboard/generate", icon: Sparkles, label: "Generate", external: false },
-  { href: "/dashboard/calendar", icon: Calendar, label: "Calendar", external: false },
-  { href: "/dashboard/campaigns", icon: Megaphone, label: "Campaigns", external: false },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/dashboard/generate", icon: Sparkles, label: "Generate" },
+  { href: "/dashboard/calendar", icon: Calendar, label: "Calendar" },
+  { href: "/dashboard/campaigns", icon: Megaphone, label: "Campaigns" },
 ];
 
 const bottomNavItems = [
@@ -56,9 +55,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer group">
               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold text-lg">B</span>
+                <span className="text-primary-foreground font-display font-bold text-lg">D</span>
               </div>
-              <span className="font-display font-semibold text-xl text-foreground">BrewLab</span>
+              <span className="font-display font-semibold text-xl text-foreground">Drinknovate</span>
             </div>
           </Link>
         </div>
@@ -66,44 +65,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Main Navigation */}
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
-            const active = !item.external && isActive(item.href);
-            
-            const navContent = (
-              <motion.div
-                whileHover={{ x: 4 }}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
-                  active 
-                    ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
-                {item.label === "Generate" && (
-                  <Badge className="ml-auto bg-accent text-accent-foreground text-xs">AI</Badge>
-                )}
-                {item.external && (
-                  <ExternalLink className="w-4 h-4 ml-auto opacity-50" />
-                )}
-              </motion.div>
-            );
-            
-            if (item.external) {
-              return (
-                <a 
-                  key={item.href} 
-                  href={item.href} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  {navContent}
-                </a>
-              );
-            }
-            
+            const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}>
-                {navContent}
+                <motion.div
+                  whileHover={{ x: 4 }}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                    active 
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                  {item.label === "Generate" && (
+                    <Badge className="ml-auto bg-accent text-accent-foreground text-xs">AI</Badge>
+                  )}
+                </motion.div>
               </Link>
             );
           })}

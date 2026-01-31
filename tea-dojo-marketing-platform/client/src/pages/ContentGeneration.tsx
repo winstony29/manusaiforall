@@ -1,12 +1,11 @@
 /**
- * Content Generation Page - BrewLab Marketing Platform
+ * Content Generation Page - Drinknovate Marketing Platform
  * Design: Warm Tech Naturalism
  * Features:
  * - Thematic Campaign Workflow (preview, iterate, generate)
  * - Multi-platform content generation (TikTok, Instagram, Facebook)
  * - Prompt-based editing and regeneration
  * - Video script generation
- * - LLM-powered content generation
  */
 
 import { useState } from "react";
@@ -27,6 +26,7 @@ import {
   FileText,
   RefreshCw,
   Check,
+  ChevronRight,
   ChevronLeft,
   Send,
   Copy,
@@ -41,14 +41,11 @@ import {
   Zap,
   Upload,
   X,
-  File,
-  AlertCircle,
-  Pencil
+  File
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { toast } from "sonner";
-// Using native HTML color input instead of react-colorful for better compatibility
+import DashboardLayout from "@/components/DashboardLayout";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -64,69 +61,46 @@ const workflowSteps = [
   { id: 3, title: "Generate Content", icon: Zap, description: "Create content across all platforms" },
 ];
 
-// Types for generated content
-interface Theme {
-  name: string;
-  slogan: string;
-  description: string;
-  colors: string[];
-  colorPalettes: string[][];
-  selectedPaletteIndex: number;
-  paletteNames?: string[];
-  keyMessages: string[];
-}
-
-interface SocialContent {
+// Sample generated content
+const sampleContent = {
   instagram: {
-    caption: string;
-    hashtags: string[];
-  };
+    caption: "Your daily dose of freshness is here! 🍋 Our Hand-Pounded Fragrant Lemon Tea is the perfect way to beat the Singapore heat. Made with real, fresh lemons and our signature tea blend, it's a taste of pure sunshine. ☀️\n\n📍 Visit us at Ang Mo Kio\n🕐 Open daily 10am - 10pm\n\n#TeaDojoSG #FreshlyMade #LemonTea #SGBubbleTea #AngMoKio #BubbleTeaSG",
+    hashtags: ["#TeaDojoSG", "#FreshlyMade", "#LemonTea", "#SGBubbleTea", "#AngMoKio"],
+  },
   facebook: {
-    caption: string;
-    hashtags: string[];
-  };
+    caption: "Ever wondered what goes into our Mango Pomelo Boba? 🥭✨\n\nIt's a delightful mix of fresh mango, juicy pomelo, and of course, our signature boba! The perfect blend of tropical sweetness and chewy goodness.\n\nCome on down to Tea Dojo in Ang Mo Kio to try this fan-favorite. We're open for takeaway and delivery!\n\n🛵 Order now on GrabFood & foodpanda\n📍 Ang Mo Kio Ave 10\n\n#TeaDojo #MangoPomelo #BobaLove #SGEats #BubbleTeaTime",
+    hashtags: ["#TeaDojo", "#MangoPomelo", "#BobaLove", "#SGEats", "#BubbleTeaTime"],
+  },
   tiktok: {
-    caption: string;
-    hashtags: string[];
-  };
-}
-
-interface VideoScript {
-  title: string;
-  duration: string;
-  scenes: Array<{
-    time: string;
-    visual: string;
-    audio: string;
-    text: string;
-  }>;
-  callToAction: string;
-}
-
-// Default empty theme
-const emptyTheme: Theme = {
-  name: "",
-  slogan: "",
-  description: "",
-  colors: [],
-  colorPalettes: [],
-  selectedPaletteIndex: 0,
-  paletteNames: ['Classic', 'Modern', 'Soft'],
-  keyMessages: [],
+    caption: "From 🥵 to 😎 in one sip. That's the Tea Dojo effect! 🧋✨\n\nPOV: You just discovered the best bubble tea in AMK\n\n#TeaDojoSG #Singapore #BubbleTea #Refreshment #TikTokSG #SGFood #BobaTime #FYP",
+    hashtags: ["#TeaDojoSG", "#Singapore", "#BubbleTea", "#TikTokSG", "#FYP"],
+  },
 };
 
-// Default empty content
-const emptyContent: SocialContent = {
-  instagram: { caption: "", hashtags: [] },
-  facebook: { caption: "", hashtags: [] },
-  tiktok: { caption: "", hashtags: [] },
+const sampleVideoScript = {
+  title: "The Tea Dojo Effect",
+  duration: "15-30 seconds",
+  scenes: [
+    { time: "0-3s", visual: "Person looking tired and hot, wiping sweat", audio: "Trending upbeat audio", text: "When it's 35°C in Singapore..." },
+    { time: "3-8s", visual: "Walking into Tea Dojo store, cool AC visible", audio: "Continue music", text: "But then you remember..." },
+    { time: "8-15s", visual: "Close-up of bubble tea being made, boba falling", audio: "Satisfying sounds", text: "Tea Dojo exists 🧋" },
+    { time: "15-20s", visual: "First sip reaction - eyes widen, smile", audio: "Music drop", text: "That first sip hits different" },
+    { time: "20-25s", visual: "Happy customer with drink, thumbs up", audio: "Music outro", text: "Tea Dojo - Ang Mo Kio" },
+  ],
+  callToAction: "Visit Tea Dojo today! Link in bio 🔗",
 };
 
-const emptyVideoScript: VideoScript = {
-  title: "",
-  duration: "",
-  scenes: [],
-  callToAction: "",
+const sampleTheme = {
+  name: "Golden Fortune CNY 2026",
+  slogan: "Huat with Every Sip! 🧧",
+  description: "A festive celebration featuring gold and red accents, prosperity themes, and limited-edition drinks. The campaign emphasizes togetherness, good fortune, and the joy of sharing bubble tea with loved ones during the Chinese New Year season.",
+  colors: ["#C41E3A", "#FFD700", "#8B0000"],
+  keyMessages: [
+    "Limited-edition CNY drinks",
+    "Prosperity bundle deals",
+    "Festive cup designs",
+    "Family sharing sets"
+  ],
 };
 
 export default function ContentGeneration() {
@@ -142,19 +116,6 @@ export default function ContentGeneration() {
   const [activeTab, setActiveTab] = useState("social");
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string, size: number}[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [refinementPrompt, setRefinementPrompt] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  
-  // Color picker state
-  const [colorPickerOpen, setColorPickerOpen] = useState(false);
-  const [editingColorIndex, setEditingColorIndex] = useState<number | null>(null);
-  const [editingPaletteIndex, setEditingPaletteIndex] = useState<number | null>(null);
-  const [tempColor, setTempColor] = useState("#000000");
-
-  // Generated content state
-  const [generatedTheme, setGeneratedTheme] = useState<Theme>(emptyTheme);
-  const [generatedContent, setGeneratedContent] = useState<SocialContent>(emptyContent);
-  const [generatedVideoScript, setGeneratedVideoScript] = useState<VideoScript>(emptyVideoScript);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -192,47 +153,12 @@ export default function ContentGeneration() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const handleGenerateTheme = async () => {
+  const handleGenerateTheme = () => {
     setIsGenerating(true);
-    setError(null);
-    
-    try {
-      const response = await fetch('/api/generate-theme', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          campaignGoal,
-          targetAudience,
-          toneOfVoice,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.theme) {
-        // Ensure theme has proper structure with colorPalettes
-        const theme = {
-          ...data.theme,
-          colorPalettes: data.theme.colorPalettes || [data.theme.colors || []],
-          colors: data.theme.colorPalettes?.[0] || data.theme.colors || [],
-          selectedPaletteIndex: 0,
-          paletteNames: data.theme.paletteNames || ['Classic', 'Modern', 'Soft'],
-        };
-        setGeneratedTheme(theme);
-        setCurrentStep(2);
-        toast.success("Theme generated successfully!");
-      } else {
-        throw new Error(data.error || 'Failed to generate theme');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate theme';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
+    setTimeout(() => {
       setIsGenerating(false);
-    }
+      setCurrentStep(2);
+    }, 2000);
   };
 
   const handleApproveTheme = () => {
@@ -240,219 +166,28 @@ export default function ContentGeneration() {
     setCurrentStep(3);
   };
 
-  const handleGenerateContent = async () => {
+  const handleGenerateContent = () => {
     setIsGenerating(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/generate-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          theme: generatedTheme,
-          campaignGoal,
-          targetAudience,
-          toneOfVoice,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.content) {
-        setGeneratedContent(data.content.social);
-        setGeneratedVideoScript(data.content.video);
-        setContentGenerated(true);
-        toast.success("Content generated successfully!");
-      } else {
-        throw new Error(data.error || 'Failed to generate content');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate content';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
+    setTimeout(() => {
       setIsGenerating(false);
-    }
+      setContentGenerated(true);
+    }, 2500);
   };
 
-  const handleEditContent = async () => {
+  const handleEditContent = () => {
     if (!editPrompt.trim()) return;
     setIsGenerating(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/edit-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentContent: generatedContent,
-          editPrompt,
-          platform: selectedPlatform,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.content) {
-        setGeneratedContent(data.content);
-        setEditPrompt("");
-        toast.success("Content updated successfully!");
-      } else {
-        throw new Error(data.error || 'Failed to edit content');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to edit content';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
+    setTimeout(() => {
       setIsGenerating(false);
-    }
+      setEditPrompt("");
+    }, 1500);
   };
 
-  const handleRegenerate = async () => {
+  const handleRegenerate = () => {
     setIsGenerating(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/regenerate-theme', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentTheme: generatedTheme,
-          refinementPrompt,
-          campaignGoal,
-          targetAudience,
-          toneOfVoice,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.theme) {
-        // Ensure theme has proper structure with colorPalettes
-        const theme = {
-          ...data.theme,
-          colorPalettes: data.theme.colorPalettes || [data.theme.colors || []],
-          colors: data.theme.colorPalettes?.[0] || data.theme.colors || [],
-          selectedPaletteIndex: 0,
-          paletteNames: data.theme.paletteNames || ['Classic', 'Modern', 'Soft'],
-        };
-        setGeneratedTheme(theme);
-        setRefinementPrompt("");
-        toast.success("Theme regenerated successfully!");
-      } else {
-        throw new Error(data.error || 'Failed to regenerate theme');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate theme';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
+    setTimeout(() => {
       setIsGenerating(false);
-    }
-  };
-
-  // Select a different color palette option
-  const selectPalette = (index: number) => {
-    if (generatedTheme.colorPalettes && generatedTheme.colorPalettes[index]) {
-      setGeneratedTheme({
-        ...generatedTheme,
-        colors: generatedTheme.colorPalettes[index],
-        selectedPaletteIndex: index,
-      });
-      toast.success(`Selected ${generatedTheme.paletteNames?.[index] || `Palette ${index + 1}`}`);
-    }
-  };
-
-  // Open color picker for a specific color
-  const openColorPicker = (paletteIndex: number, colorIndex: number, currentColor: string) => {
-    setEditingPaletteIndex(paletteIndex);
-    setEditingColorIndex(colorIndex);
-    setTempColor(currentColor);
-    setColorPickerOpen(true);
-  };
-
-  // Apply the edited color
-  const applyColorChange = () => {
-    if (editingPaletteIndex === null || editingColorIndex === null) return;
-    
-    const newColorPalettes = [...generatedTheme.colorPalettes];
-    newColorPalettes[editingPaletteIndex] = [...newColorPalettes[editingPaletteIndex]];
-    newColorPalettes[editingPaletteIndex][editingColorIndex] = tempColor;
-    
-    // Also update the active colors if this is the selected palette
-    const newColors = editingPaletteIndex === generatedTheme.selectedPaletteIndex
-      ? newColorPalettes[editingPaletteIndex]
-      : generatedTheme.colors;
-    
-    setGeneratedTheme({
-      ...generatedTheme,
-      colorPalettes: newColorPalettes,
-      colors: newColors,
-    });
-    
-    setColorPickerOpen(false);
-    setEditingColorIndex(null);
-    setEditingPaletteIndex(null);
-    toast.success("Color updated!");
-  };
-
-  // Cancel color editing
-  const cancelColorEdit = () => {
-    setColorPickerOpen(false);
-    setEditingColorIndex(null);
-    setEditingPaletteIndex(null);
-  };
-
-  // Regenerate only the color palettes
-  const handleRegeneratePalette = async () => {
-    setIsGenerating(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/regenerate-palette', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          themeName: generatedTheme.name,
-          themeDescription: generatedTheme.description,
-          campaignGoal,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.colorPalettes) {
-        setGeneratedTheme({
-          ...generatedTheme,
-          colorPalettes: data.colorPalettes,
-          colors: data.colorPalettes[0],
-          selectedPaletteIndex: 0,
-          paletteNames: data.paletteNames || ['Classic', 'Modern', 'Soft'],
-        });
-        toast.success("New color palettes generated!");
-      } else {
-        throw new Error(data.error || 'Failed to regenerate palettes');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate palettes';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleRegenerateContent = async () => {
-    await handleGenerateContent();
+    }, 1500);
   };
 
   const resetWorkflow = () => {
@@ -461,101 +196,11 @@ export default function ContentGeneration() {
     setContentGenerated(false);
     setCampaignGoal("");
     setTargetAudience("");
-    setGeneratedTheme(emptyTheme);
-    setGeneratedContent(emptyContent);
-    setGeneratedVideoScript(emptyVideoScript);
-    setError(null);
-  };
-
-  // Go to a specific step (only allow going back to completed steps)
-  const goToStep = (stepId: number) => {
-    if (stepId < currentStep) {
-      // Going back - reset states appropriately
-      if (stepId === 1) {
-        // Going back to step 1 - keep the form data but reset theme and content
-        setThemeApproved(false);
-        setContentGenerated(false);
-        setGeneratedTheme(emptyTheme);
-        setGeneratedContent(emptyContent);
-        setGeneratedVideoScript(emptyVideoScript);
-      } else if (stepId === 2) {
-        // Going back to step 2 - keep theme but reset content
-        setThemeApproved(false);
-        setContentGenerated(false);
-        setGeneratedContent(emptyContent);
-        setGeneratedVideoScript(emptyVideoScript);
-      }
-      setCurrentStep(stepId);
-      setError(null);
-    }
-  };
-
-  // Go back one step
-  const goBack = () => {
-    if (currentStep > 1) {
-      goToStep(currentStep - 1);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
-  };
-
-  const copyAllContent = () => {
-    const allContent = `
-Instagram:
-${generatedContent.instagram.caption}
-${generatedContent.instagram.hashtags.join(' ')}
-
-Facebook:
-${generatedContent.facebook.caption}
-${generatedContent.facebook.hashtags.join(' ')}
-
-TikTok:
-${generatedContent.tiktok.caption}
-${generatedContent.tiktok.hashtags.join(' ')}
-
-Video Script - ${generatedVideoScript.title}
-Duration: ${generatedVideoScript.duration}
-${generatedVideoScript.scenes.map(s => `${s.time}: ${s.visual} | ${s.text}`).join('\n')}
-CTA: ${generatedVideoScript.callToAction}
-    `.trim();
-    
-    navigator.clipboard.writeText(allContent);
-    toast.success("All content copied to clipboard!");
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </Button>
-            </Link>
-            <Separator orientation="vertical" className="h-6" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold text-sm">D</span>
-              </div>
-              <span className="font-display font-semibold text-lg text-foreground">Content Studio</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="bg-primary/5">
-              <Sparkles className="w-3 h-3 mr-1" />
-              AI Powered
-            </Badge>
-          </div>
-        </div>
-      </nav>
-
-      <main className="pt-24 pb-16">
+    <DashboardLayout>
+      <div className="p-8">
         <div className="container">
           {/* Page Header */}
           <div className="mb-8">
@@ -567,41 +212,27 @@ CTA: ${generatedVideoScript.callToAction}
             </p>
           </div>
 
-          {/* Error Alert */}
-          {error && (
-            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
-              <div>
-                <p className="font-medium text-destructive">Error</p>
-                <p className="text-sm text-destructive/80">{error}</p>
-              </div>
-            </div>
-          )}
-
           {/* Workflow Progress */}
           <div className="mb-8">
-            <div className="flex items-center justify-center gap-0 max-w-2xl mx-auto">
+            <div className="flex items-center justify-between max-w-2xl">
               {workflowSteps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
                   <div className="flex flex-col items-center">
-                    <button 
-                      onClick={() => goToStep(step.id)}
-                      disabled={step.id >= currentStep}
+                    <div 
                       className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                         currentStep > step.id 
-                          ? "bg-primary text-primary-foreground cursor-pointer hover:bg-primary/80 hover:scale-105" 
+                          ? "bg-primary text-primary-foreground" 
                           : currentStep === step.id 
-                            ? "bg-primary/20 text-primary border-2 border-primary cursor-default" 
-                            : "bg-muted text-muted-foreground cursor-not-allowed"
+                            ? "bg-primary/20 text-primary border-2 border-primary" 
+                            : "bg-muted text-muted-foreground"
                       }`}
-                      title={currentStep > step.id ? `Go back to ${step.title}` : ''}
                     >
                       {currentStep > step.id ? (
                         <Check className="w-5 h-5" />
                       ) : (
                         <step.icon className="w-5 h-5" />
                       )}
-                    </button>
+                    </div>
                     <span className={`mt-2 text-sm font-medium ${
                       currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
                     }`}>
@@ -618,9 +249,9 @@ CTA: ${generatedVideoScript.callToAction}
             </div>
           </div>
 
-          <div className={`grid gap-8 ${contentGenerated ? 'lg:grid-cols-3' : 'lg:grid-cols-1 max-w-3xl mx-auto'}`}>
-            {/* Left Panel - Configuration (Full width when no content, 1/3 when content exists) */}
-            <div className={`${contentGenerated ? 'lg:col-span-1' : ''} space-y-6`}>
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Left Panel - Configuration */}
+            <div className="lg:col-span-1 space-y-6">
               <AnimatePresence mode="wait">
                 {currentStep === 1 && (
                   <motion.div
@@ -659,45 +290,20 @@ CTA: ${generatedVideoScript.callToAction}
                             onChange={(e) => setTargetAudience(e.target.value)}
                           />
                         </div>
-                        <div className="space-y-3">
-                          <Label>Tone of Voice</Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {[
-                              { value: 'playful', label: 'Playful & Fun', emoji: '🎉' },
-                              { value: 'sophisticated', label: 'Sophisticated & Premium', emoji: '✨' },
-                              { value: 'informative', label: 'Informative & Educational', emoji: '📚' },
-                              { value: 'energetic', label: 'Energetic & Exciting', emoji: '⚡' },
-                              { value: 'warm', label: 'Warm & Friendly', emoji: '🤗' },
-                            ].map((tone) => (
-                              <label
-                                key={tone.value}
-                                className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                                  toneOfVoice === tone.value
-                                    ? 'border-primary bg-primary/10 shadow-sm'
-                                    : 'border-border hover:border-primary/50 hover:bg-secondary/30'
-                                }`}
-                              >
-                                <input
-                                  type="radio"
-                                  name="toneOfVoice"
-                                  value={tone.value}
-                                  checked={toneOfVoice === tone.value}
-                                  onChange={(e) => setToneOfVoice(e.target.value)}
-                                  className="sr-only"
-                                />
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                  toneOfVoice === tone.value
-                                    ? 'border-primary bg-primary'
-                                    : 'border-muted-foreground'
-                                }`}>
-                                  {toneOfVoice === tone.value && (
-                                    <div className="w-2 h-2 rounded-full bg-white" />
-                                  )}
-                                </div>
-                                <span className="text-sm font-medium">{tone.emoji} {tone.label}</span>
-                              </label>
-                            ))}
-                          </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="tone">Tone of Voice</Label>
+                          <Select value={toneOfVoice} onValueChange={setToneOfVoice}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="playful">Playful & Fun</SelectItem>
+                              <SelectItem value="sophisticated">Sophisticated & Premium</SelectItem>
+                              <SelectItem value="informative">Informative & Educational</SelectItem>
+                              <SelectItem value="energetic">Energetic & Exciting</SelectItem>
+                              <SelectItem value="warm">Warm & Friendly</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         
                         {/* File Upload Dropzone */}
@@ -807,103 +413,36 @@ CTA: ${generatedVideoScript.callToAction}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="p-5 bg-secondary/50 rounded-xl">
-                          {/* Campaign Name - Large & Bold */}
-                          <h3 className="font-display font-bold text-2xl text-foreground mb-2">
-                            {generatedTheme.name || "Generating..."}
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <h3 className="font-display font-semibold text-lg text-foreground mb-1">
+                            {sampleTheme.name}
                           </h3>
-                          
-                          {/* Slogan - Prominent */}
-                          <p className="text-[oklch(0.60_0.12_45)] font-semibold text-lg mb-4">
-                            {generatedTheme.slogan}
+                          <p className="text-[oklch(0.60_0.12_45)] font-medium mb-3">
+                            {sampleTheme.slogan}
                           </p>
-                          
-                          {/* Color Palette Options */}
-                          {generatedTheme.colorPalettes && generatedTheme.colorPalettes.length > 0 && (
-                            <div className="mb-5 space-y-4">
-                              <div className="flex items-center justify-between">
-                                <Label className="text-sm font-medium text-muted-foreground">Color Palette Options</Label>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={handleRegeneratePalette}
-                                  disabled={isGenerating}
-                                  className="text-xs h-7 px-2"
-                                >
-                                  <RefreshCw className={`w-3 h-3 mr-1 ${isGenerating ? "animate-spin" : ""}`} />
-                                  New Palettes
-                                </Button>
-                              </div>
-                              
-                              {/* Palette Options */}
-                              <div className="space-y-3">
-                                {generatedTheme.colorPalettes.map((palette, paletteIndex) => (
-                                  <div 
-                                    key={paletteIndex}
-                                    onClick={() => selectPalette(paletteIndex)}
-                                    className={`p-3 rounded-xl cursor-pointer transition-all ${
-                                      generatedTheme.selectedPaletteIndex === paletteIndex
-                                        ? 'bg-primary/10 border-2 border-primary shadow-md'
-                                        : 'bg-background/50 border-2 border-transparent hover:border-primary/30 hover:bg-primary/5'
-                                    }`}
-                                  >
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-xs font-medium text-muted-foreground">
-                                        {generatedTheme.paletteNames?.[paletteIndex] || `Option ${paletteIndex + 1}`}
-                                      </span>
-                                      {generatedTheme.selectedPaletteIndex === paletteIndex && (
-                                        <Badge variant="default" className="text-xs h-5">
-                                          <Check className="w-3 h-3 mr-1" />
-                                          Selected
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <div className="flex gap-2">
-                                      {palette.map((color, colorIndex) => (
-                                        <div key={colorIndex} className="group relative">
-                                          <div 
-                                            className="w-10 h-10 rounded-lg border-2 border-white shadow-md transition-transform hover:scale-110 cursor-pointer"
-                                            style={{ backgroundColor: color }}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              openColorPicker(paletteIndex, colorIndex, color);
-                                            }}
-                                          >
-                                            {/* Edit icon overlay on hover */}
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                                              <Pencil className="w-4 h-4 text-white" />
-                                            </div>
-                                          </div>
-                                          <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background px-1.5 py-0.5 rounded whitespace-nowrap z-10">
-                                            {color}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Key Messages - Simplified as Tags */}
-                          {generatedTheme.keyMessages.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-6">
-                              {generatedTheme.keyMessages.map((msg, i) => {
-                                // Extract just the key phrase (first 4-6 words)
-                                const shortMsg = msg.split(' ').slice(0, 5).join(' ');
-                                return (
-                                  <span 
-                                    key={i} 
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
-                                  >
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                    {shortMsg.length < msg.length ? shortMsg + '...' : shortMsg}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          )}
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {sampleTheme.description}
+                          </p>
+                          <div className="flex gap-2 mb-4">
+                            {sampleTheme.colors.map((color, i) => (
+                              <div 
+                                key={i}
+                                className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Key Messages</p>
+                            <ul className="text-sm space-y-1">
+                              {sampleTheme.keyMessages.map((msg, i) => (
+                                <li key={i} className="flex items-center gap-2">
+                                  <Check className="w-3 h-3 text-primary" />
+                                  {msg}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         </div>
                         
                         <div className="space-y-2">
@@ -911,8 +450,6 @@ CTA: ${generatedVideoScript.callToAction}
                           <Textarea 
                             placeholder="e.g., Make it more family-oriented, add more emphasis on sharing..."
                             className="min-h-[80px]"
-                            value={refinementPrompt}
-                            onChange={(e) => setRefinementPrompt(e.target.value)}
                           />
                         </div>
 
@@ -938,8 +475,8 @@ CTA: ${generatedVideoScript.callToAction}
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="w-full text-muted-foreground hover:text-foreground"
-                          onClick={goBack}
+                          className="w-full"
+                          onClick={() => setCurrentStep(1)}
                         >
                           <ChevronLeft className="w-4 h-4 mr-1" />
                           Back to Campaign Setup
@@ -968,51 +505,29 @@ CTA: ${generatedVideoScript.callToAction}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
-                          <p className="font-semibold text-primary text-lg">{generatedTheme.name}</p>
-                          <p className="text-sm text-muted-foreground mb-3">{generatedTheme.slogan}</p>
-                          {generatedTheme.colors.length > 0 && (
-                            <div className="flex gap-2">
-                              {generatedTheme.colors.map((color, i) => (
-                                <div 
-                                  key={i}
-                                  className="w-10 h-10 rounded-lg shadow-md"
-                                  style={{ backgroundColor: color }}
-                                />
-                              ))}
-                            </div>
-                          )}
+                        <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                          <p className="text-sm font-medium text-primary">Theme: {sampleTheme.name}</p>
+                          <p className="text-xs text-muted-foreground">{sampleTheme.slogan}</p>
                         </div>
 
                         {!contentGenerated ? (
-                          <div className="space-y-3">
-                            <Button 
-                              className="w-full bg-primary hover:bg-primary/90"
-                              onClick={handleGenerateContent}
-                              disabled={isGenerating}
-                            >
-                              {isGenerating ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  Generating All Content...
-                                </>
-                              ) : (
-                                <>
-                                  <Sparkles className="w-4 h-4 mr-2" />
-                                  Generate All Content
-                                </>
-                              )}
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="w-full text-muted-foreground hover:text-foreground"
-                              onClick={goBack}
-                            >
-                              <ChevronLeft className="w-4 h-4 mr-1" />
-                              Back to Theme Preview
-                            </Button>
-                          </div>
+                          <Button 
+                            className="w-full bg-primary hover:bg-primary/90"
+                            onClick={handleGenerateContent}
+                            disabled={isGenerating}
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Generating All Content...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-4 h-4 mr-2" />
+                                Generate All Content
+                              </>
+                            )}
+                          </Button>
                         ) : (
                           <div className="space-y-3">
                             <div className="flex items-center gap-2 text-primary">
@@ -1025,15 +540,6 @@ CTA: ${generatedVideoScript.callToAction}
                               onClick={resetWorkflow}
                             >
                               Start New Campaign
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="w-full text-muted-foreground hover:text-foreground"
-                              onClick={goBack}
-                            >
-                              <ChevronLeft className="w-4 h-4 mr-1" />
-                              Back to Theme Preview
                             </Button>
                           </div>
                         )}
@@ -1078,8 +584,7 @@ CTA: ${generatedVideoScript.callToAction}
               </AnimatePresence>
             </div>
 
-            {/* Right Panel - Content Preview (Only shown when content is generated) */}
-            {contentGenerated && (
+            {/* Right Panel - Content Preview */}
             <div className="lg:col-span-2">
               <Card className="h-full">
                 <CardHeader>
@@ -1087,7 +592,7 @@ CTA: ${generatedVideoScript.callToAction}
                     <CardTitle className="font-display">Content Preview</CardTitle>
                     {contentGenerated && (
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={copyAllContent}>
+                        <Button variant="outline" size="sm">
                           <Copy className="w-4 h-4 mr-2" />
                           Copy All
                         </Button>
@@ -1166,26 +671,17 @@ CTA: ${generatedVideoScript.callToAction}
                                     </div>
                                   </div>
                                   {/* Post Image */}
-                                  <div 
-                                    className="aspect-square flex items-center justify-center"
-                                    style={{
-                                      background: generatedTheme.colors.length >= 2 
-                                        ? `linear-gradient(135deg, ${generatedTheme.colors[0]}, ${generatedTheme.colors[1]})`
-                                        : 'linear-gradient(135deg, #C41E3A, #FFD700)'
-                                    }}
-                                  >
+                                  <div className="aspect-square bg-gradient-to-br from-[#C41E3A] to-[#FFD700] flex items-center justify-center">
                                     <div className="text-center text-white p-4">
-                                      <p className="font-display text-2xl font-bold mb-2">
-                                        {generatedTheme.slogan.match(/[\u{1F300}-\u{1F9FF}]/gu)?.[0] || '🧋'}
-                                      </p>
-                                      <p className="font-display text-lg font-bold">{generatedTheme.slogan}</p>
-                                      <p className="text-sm mt-2 opacity-90">{generatedTheme.keyMessages[0]}</p>
+                                      <p className="font-display text-2xl font-bold mb-2">🧧</p>
+                                      <p className="font-display text-lg font-bold">{sampleTheme.slogan}</p>
+                                      <p className="text-sm mt-2 opacity-90">Limited Edition CNY Drinks</p>
                                     </div>
                                   </div>
                                   {/* Caption Preview */}
                                   <div className="p-3">
                                     <p className="text-xs text-gray-800 line-clamp-3">
-                                      {generatedContent[selectedPlatform as keyof typeof generatedContent].caption.substring(0, 100)}...
+                                      {sampleContent[selectedPlatform as keyof typeof sampleContent].caption.substring(0, 100)}...
                                     </p>
                                   </div>
                                 </div>
@@ -1198,14 +694,14 @@ CTA: ${generatedVideoScript.callToAction}
                                 <Label className="text-sm font-medium mb-2 block">Caption</Label>
                                 <div className="p-4 bg-secondary/30 rounded-lg">
                                   <p className="text-sm whitespace-pre-line">
-                                    {generatedContent[selectedPlatform as keyof typeof generatedContent].caption}
+                                    {sampleContent[selectedPlatform as keyof typeof sampleContent].caption}
                                   </p>
                                 </div>
                               </div>
                               <div>
                                 <Label className="text-sm font-medium mb-2 block">Hashtags</Label>
                                 <div className="flex flex-wrap gap-2">
-                                  {generatedContent[selectedPlatform as keyof typeof generatedContent].hashtags.map((tag, i) => (
+                                  {sampleContent[selectedPlatform as keyof typeof sampleContent].hashtags.map((tag, i) => (
                                     <Badge key={i} variant="secondary" className="text-xs">
                                       {tag}
                                     </Badge>
@@ -1213,26 +709,12 @@ CTA: ${generatedVideoScript.callToAction}
                                 </div>
                               </div>
                               <div className="flex gap-2 pt-4">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="flex-1"
-                                  onClick={() => copyToClipboard(
-                                    generatedContent[selectedPlatform as keyof typeof generatedContent].caption + '\n\n' +
-                                    generatedContent[selectedPlatform as keyof typeof generatedContent].hashtags.join(' ')
-                                  )}
-                                >
+                                <Button variant="outline" size="sm" className="flex-1">
                                   <Copy className="w-4 h-4 mr-2" />
                                   Copy
                                 </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="flex-1"
-                                  onClick={handleRegenerateContent}
-                                  disabled={isGenerating}
-                                >
-                                  <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
+                                <Button variant="outline" size="sm" className="flex-1">
+                                  <RefreshCw className="w-4 h-4 mr-2" />
                                   Regenerate
                                 </Button>
                               </div>
@@ -1259,24 +741,19 @@ CTA: ${generatedVideoScript.callToAction}
                         <div className="space-y-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h3 className="font-display font-semibold text-lg">{generatedVideoScript.title}</h3>
-                              <p className="text-sm text-muted-foreground">Duration: {generatedVideoScript.duration}</p>
+                              <h3 className="font-display font-semibold text-lg">{sampleVideoScript.title}</h3>
+                              <p className="text-sm text-muted-foreground">Duration: {sampleVideoScript.duration}</p>
                             </div>
                             <div className="flex gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={handleRegenerateContent}
-                                disabled={isGenerating}
-                              >
-                                <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
+                              <Button variant="outline" size="sm">
+                                <RefreshCw className="w-4 h-4 mr-2" />
                                 Regenerate
                               </Button>
                             </div>
                           </div>
 
                           <div className="space-y-3">
-                            {generatedVideoScript.scenes.map((scene, i) => (
+                            {sampleVideoScript.scenes.map((scene, i) => (
                               <div key={i} className="p-4 bg-secondary/30 rounded-lg border-l-4 border-primary">
                                 <div className="flex items-start justify-between mb-2">
                                   <Badge variant="outline" className="text-xs">{scene.time}</Badge>
@@ -1290,7 +767,7 @@ CTA: ${generatedVideoScript.callToAction}
 
                           <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                             <p className="text-sm font-medium text-primary">Call to Action</p>
-                            <p className="text-sm text-foreground">{generatedVideoScript.callToAction}</p>
+                            <p className="text-sm text-foreground">{sampleVideoScript.callToAction}</p>
                           </div>
                         </div>
                       ) : (
@@ -1316,15 +793,7 @@ CTA: ${generatedVideoScript.callToAction}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {[1, 2, 3, 4, 5, 6].map((i) => (
-                              <div 
-                                key={i} 
-                                className="aspect-square rounded-lg border border-border flex items-center justify-center group cursor-pointer hover:border-primary transition-colors"
-                                style={{
-                                  background: generatedTheme.colors.length >= 2 
-                                    ? `linear-gradient(135deg, ${generatedTheme.colors[0]}20, ${generatedTheme.colors[1]}20)`
-                                    : 'linear-gradient(135deg, #C41E3A20, #FFD70020)'
-                                }}
-                              >
+                              <div key={i} className="aspect-square rounded-lg bg-gradient-to-br from-[#C41E3A]/20 to-[#FFD700]/20 border border-border flex items-center justify-center group cursor-pointer hover:border-primary transition-colors">
                                 <div className="text-center p-4">
                                   <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                   <p className="text-xs text-muted-foreground">Visual {i}</p>
@@ -1355,180 +824,9 @@ CTA: ${generatedVideoScript.callToAction}
                 </CardContent>
               </Card>
             </div>
-            )}
           </div>
         </div>
-      </main>
-
-      {/* Color Picker Modal */}
-      <AnimatePresence>
-        {colorPickerOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={cancelColorEdit}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-background rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-display font-semibold text-lg">Edit Color</h3>
-                <Button variant="ghost" size="sm" onClick={cancelColorEdit}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              {/* Color Picker & Preview */}
-              <div className="flex flex-col items-center gap-4 mb-4">
-                {/* Color Preview with Native Picker */}
-                <div className="relative group">
-                  <div 
-                    className="w-32 h-32 rounded-2xl shadow-lg border-4 border-white"
-                    style={{ backgroundColor: tempColor }}
-                  />
-                  <input
-                    type="color"
-                    value={tempColor}
-                    onChange={(e) => setTempColor(e.target.value)}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-black/50 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                      Click to pick
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Hex Input */}
-                <div className="w-full space-y-2">
-                  <Label className="text-xs text-muted-foreground">Hex Code</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground font-mono">#</span>
-                    <Input
-                      value={tempColor.replace('#', '').toUpperCase()}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/[^0-9A-Fa-f]/g, '').substring(0, 6);
-                        if (val.length === 6) {
-                          setTempColor('#' + val);
-                        } else if (val.length < 6) {
-                          setTempColor('#' + val.padEnd(6, '0'));
-                        }
-                      }}
-                      className="flex-1 font-mono text-sm uppercase bg-secondary/30"
-                      maxLength={6}
-                      placeholder="000000"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              {/* RGB Sliders */}
-              <div className="space-y-3 mb-4">
-                {(() => {
-                  const hex = tempColor.replace('#', '');
-                  const r = parseInt(hex.substring(0, 2), 16) || 0;
-                  const g = parseInt(hex.substring(2, 4), 16) || 0;
-                  const b = parseInt(hex.substring(4, 6), 16) || 0;
-                  
-                  const updateRGB = (newR: number, newG: number, newB: number) => {
-                    const toHex = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
-                    setTempColor('#' + toHex(newR) + toHex(newG) + toHex(newB));
-                  };
-                  
-                  return (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 text-center text-xs font-medium text-red-600">R</div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="255"
-                          value={r}
-                          onChange={(e) => updateRGB(parseInt(e.target.value), g, b)}
-                          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
-                          style={{ background: `linear-gradient(to right, rgb(0,${g},${b}), rgb(255,${g},${b}))` }}
-                        />
-                        <Input
-                          type="number"
-                          min="0"
-                          max="255"
-                          value={r}
-                          onChange={(e) => updateRGB(parseInt(e.target.value) || 0, g, b)}
-                          className="w-16 text-center font-mono text-sm"
-                        />
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 text-center text-xs font-medium text-green-600">G</div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="255"
-                          value={g}
-                          onChange={(e) => updateRGB(r, parseInt(e.target.value), b)}
-                          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
-                          style={{ background: `linear-gradient(to right, rgb(${r},0,${b}), rgb(${r},255,${b}))` }}
-                        />
-                        <Input
-                          type="number"
-                          min="0"
-                          max="255"
-                          value={g}
-                          onChange={(e) => updateRGB(r, parseInt(e.target.value) || 0, b)}
-                          className="w-16 text-center font-mono text-sm"
-                        />
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 text-center text-xs font-medium text-blue-600">B</div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="255"
-                          value={b}
-                          onChange={(e) => updateRGB(r, g, parseInt(e.target.value))}
-                          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
-                          style={{ background: `linear-gradient(to right, rgb(${r},${g},0), rgb(${r},${g},255))` }}
-                        />
-                        <Input
-                          type="number"
-                          min="0"
-                          max="255"
-                          value={b}
-                          onChange={(e) => updateRGB(r, g, parseInt(e.target.value) || 0)}
-                          className="w-16 text-center font-mono text-sm"
-                        />
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={cancelColorEdit}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  className="flex-1 bg-primary hover:bg-primary/90"
-                  onClick={applyColorChange}
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  Apply
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
