@@ -10,6 +10,12 @@ import ContentGeneration from "./pages/ContentGeneration";
 import CalendarPage from "./pages/CalendarPage";
 import Campaigns from "./pages/Campaigns";
 import Help from "./pages/Help";
+import GenerateLanding from "./pages/GenerateLanding";
+import CreatePost from "./pages/CreatePost";
+import CreateCampaign from "./pages/CreateCampaign";
+import CampaignsList from "./pages/CampaignsList";
+import PostsList from "./pages/PostsList";
+import Settings from "./pages/Settings";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -17,11 +23,21 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/dashboard/generate"} component={ContentGeneration} />
       <Route path={"/dashboard/calendar"} component={CalendarPage} />
-      <Route path={"/dashboard/campaigns"} component={Campaigns} />
+      
+      {/* Content Studio Flow */}
+      <Route path={"/dashboard/generate"} component={GenerateLanding} />
+      <Route path={"/dashboard/create-post"} component={CreatePost} />
+      <Route path={"/dashboard/create-campaign"} component={CreateCampaign} />
+      <Route path={"/dashboard/campaigns"} component={CampaignsList} />
+      <Route path={"/dashboard/campaigns/:id"} component={CampaignsList} />
+      <Route path={"/dashboard/posts"} component={PostsList} />
+      <Route path={"/dashboard/settings"} component={Settings} />
       <Route path={"/dashboard/help"} component={Help} />
+      
+      {/* Legacy route for backward compatibility */}
       <Route path={"/generate"} component={ContentGeneration} />
+      
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

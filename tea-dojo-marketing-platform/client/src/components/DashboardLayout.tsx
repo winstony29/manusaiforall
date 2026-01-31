@@ -13,6 +13,7 @@ import {
   Sparkles, 
   Calendar, 
   Megaphone,
+  FileText,
   Settings,
   HelpCircle,
   LogOut,
@@ -29,6 +30,7 @@ const navItems = [
   { href: "/dashboard/generate", icon: Sparkles, label: "Generate" },
   { href: "/dashboard/calendar", icon: Calendar, label: "Calendar" },
   { href: "/dashboard/campaigns", icon: Megaphone, label: "Campaigns" },
+  { href: "/dashboard/posts", icon: FileText, label: "Posts" },
 ];
 
 const bottomNavItems = [
