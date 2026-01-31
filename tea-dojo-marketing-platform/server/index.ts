@@ -14,12 +14,17 @@ interface ThemeRequest {
   toneOfVoice: string;
 }
 
+interface ColorPalette {
+  name: string;
+  colors: string[];
+}
+
 interface Theme {
   name: string;
   slogan: string;
   description: string;
   colors: string[];
-  colorPalettes: string[][]; // Multiple palette options
+  colorPalettes: ColorPalette[]; // Multiple palette options with names
   selectedPaletteIndex: number;
   keyMessages: string[];
 }
@@ -119,13 +124,31 @@ Respond ONLY with the JSON object, no additional text.`;
     // Parse the JSON response
     const parsedTheme = JSON.parse(responseText);
     
-    // Ensure we have the new structure with colorPalettes
+    // Ensure we have the new structure with colorPalettes as objects
+    const paletteNames = ['Classic', 'Modern', 'Soft'];
+    let colorPalettes: ColorPalette[];
+    
+    if (Array.isArray(parsedTheme.colorPalettes)) {
+      // Check if colorPalettes are already objects or just arrays
+      if (parsedTheme.colorPalettes[0] && typeof parsedTheme.colorPalettes[0] === 'object' && !Array.isArray(parsedTheme.colorPalettes[0])) {
+        colorPalettes = parsedTheme.colorPalettes;
+      } else {
+        // Convert arrays to objects with names
+        colorPalettes = parsedTheme.colorPalettes.map((colors: string[], index: number) => ({
+          name: paletteNames[index] || `Option ${index + 1}`,
+          colors: colors
+        }));
+      }
+    } else {
+      colorPalettes = [{ name: 'Classic', colors: parsedTheme.colors || [] }];
+    }
+    
     const theme: Theme = {
       name: parsedTheme.name,
       slogan: parsedTheme.slogan,
       description: parsedTheme.description,
-      colorPalettes: parsedTheme.colorPalettes || [parsedTheme.colors || []],
-      colors: parsedTheme.colorPalettes?.[0] || parsedTheme.colors || [],
+      colorPalettes: colorPalettes,
+      colors: colorPalettes[0]?.colors || [],
       selectedPaletteIndex: 0,
       keyMessages: parsedTheme.keyMessages
     };
@@ -356,13 +379,31 @@ Respond ONLY with the JSON object.`;
     regenResponseText = regenResponseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsedTheme = JSON.parse(regenResponseText);
     
-    // Ensure we have the new structure with colorPalettes
+    // Ensure we have the new structure with colorPalettes as objects
+    const paletteNames = ['Classic', 'Modern', 'Soft'];
+    let colorPalettes: ColorPalette[];
+    
+    if (Array.isArray(parsedTheme.colorPalettes)) {
+      // Check if colorPalettes are already objects or just arrays
+      if (parsedTheme.colorPalettes[0] && typeof parsedTheme.colorPalettes[0] === 'object' && !Array.isArray(parsedTheme.colorPalettes[0])) {
+        colorPalettes = parsedTheme.colorPalettes;
+      } else {
+        // Convert arrays to objects with names
+        colorPalettes = parsedTheme.colorPalettes.map((colors: string[], index: number) => ({
+          name: paletteNames[index] || `Option ${index + 1}`,
+          colors: colors
+        }));
+      }
+    } else {
+      colorPalettes = [{ name: 'Classic', colors: parsedTheme.colors || [] }];
+    }
+    
     const theme: Theme = {
       name: parsedTheme.name,
       slogan: parsedTheme.slogan,
       description: parsedTheme.description,
-      colorPalettes: parsedTheme.colorPalettes || [parsedTheme.colors || []],
-      colors: parsedTheme.colorPalettes?.[0] || parsedTheme.colors || [],
+      colorPalettes: colorPalettes,
+      colors: colorPalettes[0]?.colors || [],
       selectedPaletteIndex: 0,
       keyMessages: parsedTheme.keyMessages
     };

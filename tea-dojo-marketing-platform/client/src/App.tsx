@@ -9,6 +9,11 @@ import Dashboard from "./pages/Dashboard";
 import ContentGeneration from "./pages/ContentGeneration";
 import CalendarPage from "./pages/CalendarPage";
 import Campaigns from "./pages/Campaigns";
+import GenerateLanding from "./pages/GenerateLanding";
+import CreatePost from "./pages/CreatePost";
+import CreateCampaign from "./pages/CreateCampaign";
+import CampaignsList from "./pages/CampaignsList";
+import PostsList from "./pages/PostsList";
 
 
 function Router() {
@@ -19,7 +24,18 @@ function Router() {
       <Route path={"/dashboard/generate"} component={ContentGeneration} />
       <Route path={"/dashboard/calendar"} component={CalendarPage} />
       <Route path={"/dashboard/campaigns"} component={Campaigns} />
-      <Route path={"/generate"} component={ContentGeneration} />
+      
+      {/* New Generate Flow */}
+      <Route path={"/generate"} component={GenerateLanding} />
+      <Route path={"/create-post"} component={CreatePost} />
+      <Route path={"/create-campaign"} component={CreateCampaign} />
+      <Route path={"/campaigns"} component={CampaignsList} />
+      <Route path={"/campaigns/:id"} component={CampaignsList} />
+      <Route path={"/posts"} component={PostsList} />
+      
+      {/* Legacy route for backward compatibility */}
+      <Route path={"/generate-content"} component={ContentGeneration} />
+      
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
