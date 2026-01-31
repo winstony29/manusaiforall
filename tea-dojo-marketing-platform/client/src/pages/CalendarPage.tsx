@@ -3,7 +3,7 @@
  * Promotional calendar with Singapore-specific events
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,21 +19,18 @@ import {
   TrendingUp
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "wouter";
 
-// Calendar events data
-const calendarEvents = {
+// Calendar events data (holidays and pre-defined campaigns)
+const staticCalendarEvents = {
   "2026-01": [
     { date: 1, title: "New Year's Day", type: "holiday", color: "bg-red-500" },
-    { date: 29, title: "CNY Campaign Launch", type: "campaign", color: "bg-primary" },
   ],
   "2026-02": [
     { date: 1, title: "Chinese New Year", type: "holiday", color: "bg-red-500" },
     { date: 2, title: "CNY Day 2", type: "holiday", color: "bg-red-500" },
-    { date: 14, title: "Valentine's Day Promo", type: "campaign", color: "bg-pink-500" },
   ],
   "2026-03": [
-    { date: 8, title: "Women's Day Special", type: "campaign", color: "bg-purple-500" },
-    { date: 31, title: "Hari Raya Prep", type: "campaign", color: "bg-primary" },
   ],
   "2026-04": [
     { date: 3, title: "Hari Raya Puasa", type: "holiday", color: "bg-green-500" },
@@ -41,75 +38,42 @@ const calendarEvents = {
   ],
   "2026-05": [
     { date: 1, title: "Labour Day", type: "holiday", color: "bg-blue-500" },
-    { date: 10, title: "Mother's Day Campaign", type: "campaign", color: "bg-pink-500" },
     { date: 26, title: "Vesak Day", type: "holiday", color: "bg-yellow-500" },
   ],
   "2026-06": [
     { date: 10, title: "Hari Raya Haji", type: "holiday", color: "bg-green-500" },
-    { date: 21, title: "Father's Day Campaign", type: "campaign", color: "bg-blue-500" },
   ],
   "2026-07": [
-    { date: 15, title: "Mid-Year Sale", type: "campaign", color: "bg-primary" },
   ],
   "2026-08": [
     { date: 9, title: "National Day", type: "holiday", color: "bg-red-500" },
-    { date: 1, title: "National Day Campaign", type: "campaign", color: "bg-red-500" },
   ],
   "2026-09": [
-    { date: 15, title: "Mid-Autumn Festival", type: "campaign", color: "bg-orange-500" },
   ],
   "2026-10": [
-    { date: 31, title: "Halloween Special", type: "campaign", color: "bg-purple-500" },
   ],
   "2026-11": [
     { date: 7, title: "Deepavali", type: "holiday", color: "bg-yellow-500" },
-    { date: 11, title: "11.11 Sale", type: "campaign", color: "bg-primary" },
   ],
   "2026-12": [
     { date: 25, title: "Christmas", type: "holiday", color: "bg-red-500" },
-    { date: 1, title: "Christmas Campaign", type: "campaign", color: "bg-red-500" },
-    { date: 31, title: "New Year's Eve", type: "campaign", color: "bg-primary" },
   ],
 };
 
-const upcomingEvents = [
-  {
-    id: 1,
-    title: "Chinese New Year Campaign",
-    date: "Feb 1-15, 2026",
-    description: "Golden Fortune CNY - Huat with Every Sip!",
-    type: "Major Campaign",
-    status: "planning",
-    aiSuggestion: true,
-  },
-  {
-    id: 2,
-    title: "Valentine's Day Promo",
-    date: "Feb 14, 2026",
-    description: "Love is in the Tea - Couple specials and heart-themed drinks",
-    type: "Seasonal",
-    status: "draft",
-    aiSuggestion: true,
-  },
-  {
-    id: 3,
-    title: "National Day Celebration",
-    date: "Aug 1-9, 2026",
-    description: "Our Singapore, Our Tea - Patriotic themed content",
-    type: "Major Campaign",
-    status: "scheduled",
-    aiSuggestion: true,
-  },
-  {
-    id: 4,
-    title: "11.11 Singles Day Sale",
-    date: "Nov 11, 2026",
-    description: "Biggest sale of the year - Buy 1 Get 1 promotions",
-    type: "Sales Event",
-    status: "planning",
-    aiSuggestion: false,
-  },
-];
+interface Campaign {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  campaignGoal: string;
+  status: 'draft' | 'active' | 'completed';
+  theme?: {
+    name: string;
+    colorPalettes: { colors: string[] }[];
+    selectedPaletteIndex: number;
+  };
+  createdAt: string;
+}
 
 const months = [
   "January", "February", "March", "April", "May", "June",
@@ -119,6 +83,13 @@ const months = [
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(0); // January 2026
   const [currentYear] = useState(2026);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+
+  useEffect(() => {
+    // Load campaigns from localStorage
+    const drafts = JSON.parse(localStorage.getItem('campaignDrafts') || '[]');
+    setCampaigns(drafts);
+  }, []);
 
   const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -128,9 +99,52 @@ export default function CalendarPage() {
     return new Date(year, month, 1).getDay();
   };
 
+  const getCampaignColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-yellow-500';
+      case 'active': return 'bg-green-500';
+      case 'completed': return 'bg-gray-500';
+      default: return 'bg-primary';
+    }
+  };
+
   const getEventsForMonth = (month: number) => {
     const key = `2026-${String(month + 1).padStart(2, '0')}`;
-    return calendarEvents[key as keyof typeof calendarEvents] || [];
+    const staticEvents = staticCalendarEvents[key as keyof typeof staticCalendarEvents] || [];
+    
+    // Add campaigns from localStorage
+    const campaignEvents: Array<{ date: number; title: string; type: string; color: string }> = [];
+    
+    campaigns.forEach(campaign => {
+      if (campaign.startDate) {
+        const startDate = new Date(campaign.startDate);
+        const endDate = campaign.endDate ? new Date(campaign.endDate) : startDate;
+        
+        // Check if campaign falls in current month
+        if (startDate.getFullYear() === currentYear && startDate.getMonth() === month) {
+          campaignEvents.push({
+            date: startDate.getDate(),
+            title: campaign.name,
+            type: 'campaign',
+            color: getCampaignColor(campaign.status)
+          });
+        }
+        
+        // If campaign spans multiple days in the same month, add end date marker
+        if (endDate.getFullYear() === currentYear && 
+            endDate.getMonth() === month && 
+            endDate.getDate() !== startDate.getDate()) {
+          campaignEvents.push({
+            date: endDate.getDate(),
+            title: `${campaign.name} (End)`,
+            type: 'campaign',
+            color: getCampaignColor(campaign.status)
+          });
+        }
+      }
+    });
+    
+    return [...staticEvents, ...campaignEvents];
   };
 
   const renderCalendarDays = () => {
@@ -188,10 +202,29 @@ export default function CalendarPage() {
         return "bg-gray-100 text-gray-800 border-gray-200";
       case "scheduled":
         return "bg-green-100 text-green-800 border-green-200";
+      case "active":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "completed":
+        return "bg-gray-100 text-gray-600 border-gray-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Not set';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  // Get upcoming campaigns (sorted by start date)
+  const upcomingCampaigns = campaigns
+    .filter(c => c.startDate)
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .slice(0, 4);
 
   return (
     <DashboardLayout>
@@ -206,10 +239,12 @@ export default function CalendarPage() {
               Plan and schedule your marketing campaigns with AI-powered suggestions
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Event
-          </Button>
+          <Link href="/dashboard/create-campaign">
+            <Button className="bg-primary hover:bg-primary/90">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Campaign
+            </Button>
+          </Link>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -299,7 +334,7 @@ export default function CalendarPage() {
               </CardContent>
             </Card>
 
-            {/* Upcoming Events */}
+            {/* Upcoming Campaigns */}
             <Card>
               <CardHeader>
                 <CardTitle className="font-display flex items-center gap-2 text-lg">
@@ -308,32 +343,58 @@ export default function CalendarPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {upcomingEvents.map((event) => (
-                    <motion.div
-                      key={event.id}
-                      whileHover={{ x: 4 }}
-                      className="p-3 rounded-lg border border-border hover:border-primary/30 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-medium text-foreground">{event.title}</h4>
-                          {event.aiSuggestion && (
-                            <Sparkles className="w-3 h-3 text-primary" />
+                {upcomingCampaigns.length > 0 ? (
+                  <div className="space-y-4">
+                    {upcomingCampaigns.map((campaign) => (
+                      <motion.div
+                        key={campaign.id}
+                        whileHover={{ x: 4 }}
+                        className="p-3 rounded-lg border border-border hover:border-primary/30 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-medium text-foreground">{campaign.name}</h4>
+                          </div>
+                          <Badge variant="outline" className={getStatusColor(campaign.status)}>
+                            {campaign.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {campaign.campaignGoal || 'No description'}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-primary">
+                            {formatDate(campaign.startDate)}
+                            {campaign.endDate && campaign.endDate !== campaign.startDate && 
+                              ` - ${formatDate(campaign.endDate)}`}
+                          </span>
+                          {campaign.theme && (
+                            <div className="flex gap-1">
+                              {campaign.theme.colorPalettes[campaign.theme.selectedPaletteIndex]?.colors.slice(0, 3).map((color, i) => (
+                                <div 
+                                  key={i}
+                                  className="w-3 h-3 rounded-full border border-white shadow-sm"
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                            </div>
                           )}
                         </div>
-                        <Badge variant="outline" className={getStatusColor(event.status)}>
-                          {event.status}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">{event.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-primary">{event.date}</span>
-                        <Badge variant="secondary" className="text-xs">{event.type}</Badge>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <CalendarIcon className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                    <p className="text-sm text-muted-foreground mb-4">No campaigns scheduled yet</p>
+                    <Link href="/dashboard/create-campaign">
+                      <Button variant="outline" size="sm">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Campaign
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
