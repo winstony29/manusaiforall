@@ -1,5 +1,5 @@
 /**
- * Tea Dojo AI Marketing Platform - Landing Page
+ * Drinknovate Marketing Platform - Landing Page
  * Design: Warm Tech Naturalism
  * - Warm cream backgrounds with forest green primary
  * - Terracotta and gold accents
@@ -53,9 +53,9 @@ export default function Home() {
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-display font-bold text-lg">茶</span>
+              <span className="text-primary-foreground font-display font-bold text-lg">D</span>
             </div>
-            <span className="font-display font-semibold text-xl text-foreground">Tea Dojo AI</span>
+            <span className="font-display font-semibold text-xl text-foreground">Drinknovate</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
@@ -84,7 +84,7 @@ export default function Home() {
           >
             <Badge className="mb-6 bg-primary/10 text-primary hover:bg-primary/20 border-0">
               <Sparkles className="w-3 h-3 mr-1" />
-              AI-Powered Marketing for Tea Dojo
+              AI-Powered Marketing Platform
             </Badge>
             
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight mb-6">
@@ -486,7 +486,7 @@ export default function Home() {
               Ready to Transform Your Marketing?
             </h2>
             <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Join Tea Dojo in revolutionizing how bubble tea brands connect with their audience. Start creating AI-powered content today.
+              Join Drinknovate in revolutionizing how beverage brands connect with their audience. Start creating AI-powered content today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/generate">
@@ -510,12 +510,12 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 rounded-full bg-primary-foreground flex items-center justify-center">
-                  <span className="text-foreground font-display font-bold text-lg">茶</span>
+                  <span className="text-foreground font-display font-bold text-lg">D</span>
                 </div>
-                <span className="font-display font-semibold text-xl">Tea Dojo AI</span>
+                <span className="font-display font-semibold text-xl">Drinknovate</span>
               </div>
               <p className="text-primary-foreground/70 text-sm">
-                AI-powered marketing platform designed for Tea Dojo Singapore.
+                AI-powered marketing platform designed for innovative beverage brands.
               </p>
             </div>
             
@@ -550,7 +550,7 @@ export default function Home() {
           </div>
           
           <div className="border-t border-primary-foreground/20 pt-8 text-center text-sm text-primary-foreground/60">
-            <p>&copy; 2026 Tea Dojo AI Marketing Platform. All rights reserved.</p>
+            <p>&copy; 2026 Drinknovate. All rights reserved.</p>
           </div>
         </div>
       </footer>

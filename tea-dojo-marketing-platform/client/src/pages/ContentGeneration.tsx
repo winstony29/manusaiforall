@@ -1,5 +1,5 @@
 /**
- * Content Generation Page - Tea Dojo AI Marketing Platform
+ * Content Generation Page - Drinknovate Marketing Platform
  * Design: Warm Tech Naturalism
  * Features:
  * - Thematic Campaign Workflow (preview, iterate, generate)
@@ -212,7 +212,7 @@ export default function ContentGeneration() {
             <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold text-sm">茶</span>
+                <span className="text-primary-foreground font-display font-bold text-sm">D</span>
               </div>
               <span className="font-display font-semibold text-lg text-foreground">Content Studio</span>
             </div>
