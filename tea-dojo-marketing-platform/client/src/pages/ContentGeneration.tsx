@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
+import DashboardLayout from "@/components/DashboardLayout";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -198,35 +199,8 @@ export default function ContentGeneration() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </Button>
-            </Link>
-            <Separator orientation="vertical" className="h-6" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold text-sm">D</span>
-              </div>
-              <span className="font-display font-semibold text-lg text-foreground">Content Studio</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="bg-primary/5">
-              <Sparkles className="w-3 h-3 mr-1" />
-              AI Powered
-            </Badge>
-          </div>
-        </div>
-      </nav>
-
-      <main className="pt-24 pb-16">
+    <DashboardLayout>
+      <div className="p-8">
         <div className="container">
           {/* Page Header */}
           <div className="mb-8">
@@ -852,7 +826,7 @@ export default function ContentGeneration() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

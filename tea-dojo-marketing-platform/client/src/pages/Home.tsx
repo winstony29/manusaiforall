@@ -63,7 +63,7 @@ export default function Home() {
             <a href="#analytics" className="text-muted-foreground hover:text-foreground transition-colors">Analytics</a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
           </div>
-          <Link href="/generate">
+          <Link href="/dashboard">
             <Button className="bg-primary hover:bg-primary/90">Get Started</Button>
           </Link>
         </div>
@@ -97,7 +97,7 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/generate">
+              <Link href="/dashboard">
                 <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8">
                   Start Creating
                   <ArrowRight className="ml-2 w-5 h-5" />
@@ -489,7 +489,7 @@ export default function Home() {
               Join Drinknovate in revolutionizing how beverage brands connect with their audience. Start creating AI-powered content today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/generate">
+              <Link href="/dashboard">
                 <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8">
                   Get Started Free
                   <Sparkles className="ml-2 w-5 h-5" />
