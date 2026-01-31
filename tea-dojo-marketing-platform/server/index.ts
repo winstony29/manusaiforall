@@ -1,5 +1,6 @@
 import express from 'express';
 import OpenAI from 'openai';
+import * as instagram from './instagram.js';
 
 const app = express();
 app.use(express.json());
@@ -55,6 +56,256 @@ interface ContentRequest {
   targetAudience: string;
   toneOfVoice: string;
 }
+
+// ============================================
+// Instagram API Routes
+// ============================================
+
+/**
+ * GET /api/instagram/auth
+ * Initiates the Instagram OAuth flow by redirecting to Instagram's authorization page
+ */
+app.get('/api/instagram/auth', (req, res) => {
+  try {
+    // Generate a state parameter for CSRF protection
+    const state = Math.random().toString(36).substring(2, 15);
+    
+    // Store state in session/cookie for verification (simplified for now)
+    // In production, use proper session management
+    
+    const authUrl = instagram.getAuthorizationUrl(state);
+    res.redirect(authUrl);
+  } catch (error) {
+    console.error('Instagram auth error:', error);
+    res.redirect('/dashboard/generate?instagram_error=config_error');
+  }
+});
+
+/**
+ * GET /api/instagram/callback
+ * Handles the OAuth callback from Instagram
+ */
+app.get('/api/instagram/callback', async (req, res) => {
+  const { code, error, error_reason, state } = req.query;
+  
+  if (error) {
+    console.error('Instagram OAuth error:', error, error_reason);
+    return res.redirect(`/dashboard/generate?instagram_error=${error}`);
+  }
+  
+  if (!code || typeof code !== 'string') {
+    return res.redirect('/dashboard/generate?instagram_error=no_code');
+  }
+  
+  try {
+    // Step 1: Exchange code for short-lived token
+    const tokenData = await instagram.exchangeCodeForToken(code);
+    
+    // Step 2: Exchange for long-lived token
+    const longLivedData = await instagram.exchangeForLongLivedToken(tokenData.access_token);
+    
+    // Step 3: Store credentials
+    // Using a simple session ID for now - in production, use proper session management
+    const sessionId = 'default'; // Replace with actual session ID
+    
+    const credentials: instagram.InstagramCredentials = {
+      accessToken: longLivedData.access_token,
+      userId: tokenData.user_id,
+      expiresAt: new Date(Date.now() + longLivedData.expires_in * 1000),
+      permissions: tokenData.permissions?.split(',') || [],
+    };
+    
+    instagram.storeCredentials(sessionId, credentials);
+    
+    // Redirect back to the app with success
+    res.redirect('/dashboard/generate?instagram_connected=true');
+  } catch (error) {
+    console.error('Instagram callback error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'auth_failed';
+    res.redirect(`/dashboard/generate?instagram_error=${encodeURIComponent(errorMessage)}`);
+  }
+});
+
+/**
+ * GET /api/instagram/status
+ * Check if Instagram is connected and get user info
+ */
+app.get('/api/instagram/status', async (req, res) => {
+  try {
+    const sessionId = 'default'; // Replace with actual session ID
+    
+    if (!instagram.hasValidCredentials(sessionId)) {
+      return res.json({ connected: false });
+    }
+    
+    const credentials = instagram.getCredentials(sessionId);
+    if (!credentials) {
+      return res.json({ connected: false });
+    }
+    
+    // Get user info
+    const userInfo = await instagram.getUserInfo(credentials.accessToken, credentials.userId);
+    
+    res.json({
+      connected: true,
+      user: {
+        id: userInfo.id,
+        username: userInfo.username,
+        name: userInfo.name,
+        profilePictureUrl: userInfo.profile_picture_url,
+        followersCount: userInfo.followers_count,
+        mediaCount: userInfo.media_count,
+      },
+      expiresAt: credentials.expiresAt,
+    });
+  } catch (error) {
+    console.error('Instagram status error:', error);
+    res.json({ connected: false, error: 'Failed to get status' });
+  }
+});
+
+/**
+ * POST /api/instagram/disconnect
+ * Disconnect Instagram account
+ */
+app.post('/api/instagram/disconnect', (req, res) => {
+  const sessionId = 'default'; // Replace with actual session ID
+  
+  // Clear stored credentials
+  instagram.storeCredentials(sessionId, {
+    accessToken: '',
+    userId: '',
+    expiresAt: new Date(0),
+    permissions: [],
+  });
+  
+  res.json({ success: true });
+});
+
+/**
+ * POST /api/instagram/post
+ * Publish content to Instagram
+ */
+app.post('/api/instagram/post', async (req, res) => {
+  const { mediaUrl, caption, mediaType = 'IMAGE' } = req.body;
+  
+  if (!mediaUrl) {
+    return res.status(400).json({ success: false, error: 'Media URL is required' });
+  }
+  
+  const sessionId = 'default'; // Replace with actual session ID
+  
+  if (!instagram.hasValidCredentials(sessionId)) {
+    return res.status(401).json({ success: false, error: 'Instagram not connected' });
+  }
+  
+  const credentials = instagram.getCredentials(sessionId);
+  if (!credentials) {
+    return res.status(401).json({ success: false, error: 'Instagram credentials not found' });
+  }
+  
+  try {
+    let result;
+    
+    if (mediaType === 'IMAGE') {
+      result = await instagram.publishImage(
+        credentials.accessToken,
+        credentials.userId,
+        mediaUrl,
+        caption
+      );
+    } else if (mediaType === 'VIDEO' || mediaType === 'REELS') {
+      result = await instagram.publishVideo(
+        credentials.accessToken,
+        credentials.userId,
+        mediaUrl,
+        caption,
+        mediaType as 'VIDEO' | 'REELS'
+      );
+    } else {
+      return res.status(400).json({ success: false, error: 'Invalid media type' });
+    }
+    
+    res.json({
+      success: true,
+      mediaId: result.id,
+      message: 'Content published successfully to Instagram',
+    });
+  } catch (error) {
+    console.error('Instagram post error:', error);
+    
+    // Extract error message from Instagram API response
+    let errorMessage = 'Failed to publish to Instagram';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    if (typeof error === 'object' && error !== null && 'response' in error) {
+      const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
+      if (axiosError.response?.data?.error?.message) {
+        errorMessage = axiosError.response.data.error.message;
+      }
+    }
+    
+    res.status(500).json({ success: false, error: errorMessage });
+  }
+});
+
+/**
+ * POST /api/instagram/refresh-token
+ * Refresh the long-lived access token
+ */
+app.post('/api/instagram/refresh-token', async (req, res) => {
+  const sessionId = 'default'; // Replace with actual session ID
+  
+  const credentials = instagram.getCredentials(sessionId);
+  if (!credentials || !credentials.accessToken) {
+    return res.status(401).json({ success: false, error: 'No token to refresh' });
+  }
+  
+  try {
+    const refreshedToken = await instagram.refreshLongLivedToken(credentials.accessToken);
+    
+    // Update stored credentials
+    instagram.storeCredentials(sessionId, {
+      ...credentials,
+      accessToken: refreshedToken.access_token,
+      expiresAt: new Date(Date.now() + refreshedToken.expires_in * 1000),
+    });
+    
+    res.json({
+      success: true,
+      expiresAt: new Date(Date.now() + refreshedToken.expires_in * 1000),
+    });
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    res.status(500).json({ success: false, error: 'Failed to refresh token' });
+  }
+});
+
+/**
+ * GET /api/instagram/publishing-limit
+ * Get the current publishing limit status
+ */
+app.get('/api/instagram/publishing-limit', async (req, res) => {
+  const sessionId = 'default'; // Replace with actual session ID
+  
+  const credentials = instagram.getCredentials(sessionId);
+  if (!credentials) {
+    return res.status(401).json({ success: false, error: 'Instagram not connected' });
+  }
+  
+  try {
+    const limit = await instagram.getPublishingLimit(credentials.accessToken, credentials.userId);
+    res.json({ success: true, ...limit });
+  } catch (error) {
+    console.error('Publishing limit error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get publishing limit' });
+  }
+});
+
+// ============================================
+// Content Generation Routes
+// ============================================
 
 // Generate campaign theme using LLM
 app.post('/api/generate-theme', async (req, res) => {

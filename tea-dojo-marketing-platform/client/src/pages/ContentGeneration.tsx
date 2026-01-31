@@ -7,9 +7,10 @@
  * - Prompt-based editing and regeneration
  * - Video script generation
  * - LLM-powered content generation
+ * - Instagram direct posting integration
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +43,10 @@ import {
   Upload,
   X,
   File,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  ExternalLink,
+  LogOut
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
@@ -98,6 +102,16 @@ interface VideoScript {
   callToAction: string;
 }
 
+// Instagram user info type
+interface InstagramUser {
+  id: string;
+  username: string;
+  name?: string;
+  profilePictureUrl?: string;
+  followersCount?: number;
+  mediaCount?: number;
+}
+
 // Default empty theme
 const emptyTheme: Theme = {
   name: "",
@@ -137,10 +151,119 @@ export default function ContentGeneration() {
   const [refinementPrompt, setRefinementPrompt] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Instagram integration state
+  const [isInstagramConnected, setIsInstagramConnected] = useState(false);
+  const [instagramUser, setInstagramUser] = useState<InstagramUser | null>(null);
+  const [isPostingToInstagram, setIsPostingToInstagram] = useState(false);
+  const [instagramPostResult, setInstagramPostResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+
   // Generated content state
   const [generatedTheme, setGeneratedTheme] = useState<Theme>(emptyTheme);
   const [generatedContent, setGeneratedContent] = useState<SocialContent>(emptyContent);
   const [generatedVideoScript, setGeneratedVideoScript] = useState<VideoScript>(emptyVideoScript);
+
+  // Check Instagram connection status on mount
+  useEffect(() => {
+    checkInstagramStatus();
+    
+    // Check URL params for OAuth callback result
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('instagram_connected') === 'true') {
+      toast.success('Instagram account connected successfully!');
+      checkInstagramStatus();
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('instagram_error')) {
+      const errorMsg = params.get('instagram_error');
+      toast.error(`Failed to connect Instagram: ${errorMsg}`);
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  const checkInstagramStatus = async () => {
+    try {
+      const response = await fetch('/api/instagram/status');
+      const data = await response.json();
+      
+      if (data.connected) {
+        setIsInstagramConnected(true);
+        setInstagramUser(data.user);
+      } else {
+        setIsInstagramConnected(false);
+        setInstagramUser(null);
+      }
+    } catch (error) {
+      console.error('Failed to check Instagram status:', error);
+      setIsInstagramConnected(false);
+    }
+  };
+
+  const handleConnectInstagram = () => {
+    // Redirect to Instagram OAuth
+    window.location.href = '/api/instagram/auth';
+  };
+
+  const handleDisconnectInstagram = async () => {
+    try {
+      const response = await fetch('/api/instagram/disconnect', { method: 'POST' });
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsInstagramConnected(false);
+        setInstagramUser(null);
+        toast.success('Instagram account disconnected');
+      }
+    } catch (error) {
+      toast.error('Failed to disconnect Instagram');
+    }
+  };
+
+  const handlePostToInstagram = async () => {
+    if (!generatedContent.instagram.caption) {
+      toast.error('No content to post');
+      return;
+    }
+
+    if (!imageUrl) {
+      toast.error('Please provide a publicly accessible image URL');
+      return;
+    }
+
+    setIsPostingToInstagram(true);
+    setInstagramPostResult(null);
+
+    try {
+      // Combine caption with hashtags
+      const fullCaption = `${generatedContent.instagram.caption}\n\n${generatedContent.instagram.hashtags.join(' ')}`;
+
+      const response = await fetch('/api/instagram/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mediaUrl: imageUrl,
+          caption: fullCaption,
+          mediaType: 'IMAGE'
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Posted to Instagram successfully!');
+        setInstagramPostResult({ success: true, message: 'Content published to Instagram!' });
+      } else {
+        throw new Error(data.error || 'Failed to post');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to post to Instagram';
+      toast.error(errorMessage);
+      setInstagramPostResult({ success: false, message: errorMessage });
+    } finally {
+      setIsPostingToInstagram(false);
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -342,6 +465,8 @@ export default function ContentGeneration() {
     setGeneratedContent(emptyContent);
     setGeneratedVideoScript(emptyVideoScript);
     setError(null);
+    setInstagramPostResult(null);
+    setImageUrl("");
   };
 
   // Go to a specific step (only allow going back to completed steps)
@@ -424,6 +549,32 @@ CTA: ${generatedVideoScript.callToAction}
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {/* Instagram Connection Status */}
+            {isInstagramConnected && instagramUser ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full border border-purple-500/20">
+                <Instagram className="w-4 h-4 text-purple-500" />
+                <span className="text-sm font-medium text-purple-700">@{instagramUser.username}</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0 hover:bg-red-100"
+                  onClick={handleDisconnectInstagram}
+                  title="Disconnect Instagram"
+                >
+                  <LogOut className="w-3 h-3 text-red-500" />
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 border-purple-300 hover:bg-purple-50"
+                onClick={handleConnectInstagram}
+              >
+                <Instagram className="w-4 h-4 text-purple-500" />
+                Connect Instagram
+              </Button>
+            )}
             <Badge variant="outline" className="bg-primary/5">
               <Sparkles className="w-3 h-3 mr-1" />
               AI Powered
@@ -591,38 +742,32 @@ CTA: ${generatedVideoScript.callToAction}
                                   key={index} 
                                   className="flex items-center justify-between p-2 bg-secondary/30 rounded-lg"
                                 >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    {file.type.startsWith('image/') ? (
-                                      <ImageIcon className="w-4 h-4 text-primary flex-shrink-0" />
-                                    ) : (
-                                      <File className="w-4 h-4 text-primary flex-shrink-0" />
-                                    )}
-                                    <span className="text-sm truncate">{file.name}</span>
-                                    <span className="text-xs text-muted-foreground flex-shrink-0">
-                                      {formatFileSize(file.size)}
-                                    </span>
+                                  <div className="flex items-center gap-2">
+                                    <File className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-sm truncate max-w-[180px]">{file.name}</span>
+                                    <span className="text-xs text-muted-foreground">({formatFileSize(file.size)})</span>
                                   </div>
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
-                                    className="h-6 w-6 p-0 flex-shrink-0"
+                                    className="h-6 w-6 p-0"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       removeFile(index);
                                     }}
                                   >
-                                    <X className="w-3 h-3" />
+                                    <X className="w-4 h-4" />
                                   </Button>
                                 </div>
                               ))}
                             </div>
                           )}
                         </div>
-                        
+
                         <Button 
                           className="w-full bg-primary hover:bg-primary/90"
                           onClick={handleGenerateTheme}
-                          disabled={isGenerating || !campaignGoal.trim()}
+                          disabled={isGenerating || !campaignGoal.trim() || !targetAudience.trim()}
                         >
                           {isGenerating ? (
                             <>
@@ -659,45 +804,31 @@ CTA: ${generatedVideoScript.callToAction}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="p-5 bg-secondary/50 rounded-xl">
-                          {/* Campaign Name - Large & Bold */}
-                          <h3 className="font-display font-bold text-2xl text-foreground mb-2">
-                            {generatedTheme.name || "Generating..."}
-                          </h3>
+                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
+                          <p className="font-semibold text-primary text-xl mb-1">{generatedTheme.name}</p>
+                          <p className="text-lg mb-3">{generatedTheme.slogan}</p>
+                          <p className="text-sm text-muted-foreground mb-4">{generatedTheme.description}</p>
                           
-                          {/* Slogan - Prominent */}
-                          <p className="text-[oklch(0.60_0.12_45)] font-semibold text-lg mb-4">
-                            {generatedTheme.slogan}
-                          </p>
-                          
-                          {/* Color Palette - Large & Prominent */}
                           {generatedTheme.colors.length > 0 && (
-                            <div className="mb-5">
-                              <div className="flex gap-3 mb-2">
-                                {generatedTheme.colors.map((color, i) => (
-                                  <div key={i} className="group relative">
-                                    <div 
-                                      className="w-14 h-14 rounded-xl border-3 border-white shadow-lg transition-transform hover:scale-110 cursor-pointer"
-                                      style={{ backgroundColor: color }}
-                                    />
-                                    <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background px-2 py-0.5 rounded whitespace-nowrap">
-                                      {color}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
+                            <div className="flex gap-2 mb-4">
+                              {generatedTheme.colors.map((color, i) => (
+                                <div 
+                                  key={i}
+                                  className="w-12 h-12 rounded-lg shadow-md border border-white/20"
+                                  style={{ backgroundColor: color }}
+                                  title={color}
+                                />
+                              ))}
                             </div>
                           )}
-                          
-                          {/* Key Messages - Simplified as Tags */}
+
                           {generatedTheme.keyMessages.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-6">
+                            <div className="flex flex-wrap gap-2">
                               {generatedTheme.keyMessages.map((msg, i) => {
-                                // Extract just the key phrase (first 4-6 words)
-                                const shortMsg = msg.split(' ').slice(0, 5).join(' ');
+                                const shortMsg = msg.length > 30 ? msg.substring(0, 30) : msg;
                                 return (
                                   <span 
-                                    key={i} 
+                                    key={i}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
                                   >
                                     <Sparkles className="w-3.5 h-3.5" />
@@ -873,6 +1004,106 @@ CTA: ${generatedVideoScript.callToAction}
                             )}
                             Apply Changes
                           </Button>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Instagram Post Card */}
+                    {contentGenerated && selectedPlatform === "instagram" && (
+                      <Card className="border-purple-200 bg-gradient-to-br from-purple-50/50 to-pink-50/50">
+                        <CardHeader>
+                          <CardTitle className="font-display text-lg flex items-center gap-2">
+                            <Instagram className="w-5 h-5 text-purple-500" />
+                            Post to Instagram
+                          </CardTitle>
+                          <CardDescription>
+                            Publish this content directly to your Instagram account
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {!isInstagramConnected ? (
+                            <div className="text-center py-4">
+                              <Instagram className="w-12 h-12 text-purple-300 mx-auto mb-3" />
+                              <p className="text-sm text-muted-foreground mb-3">
+                                Connect your Instagram account to post directly
+                              </p>
+                              <Button 
+                                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                                onClick={handleConnectInstagram}
+                              >
+                                <Instagram className="w-4 h-4 mr-2" />
+                                Connect Instagram
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              {/* Connected Account Info */}
+                              <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg border border-purple-100">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                                  <Instagram className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">@{instagramUser?.username}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {instagramUser?.followersCount?.toLocaleString()} followers
+                                  </p>
+                                </div>
+                                <CheckCircle className="w-5 h-5 text-green-500 ml-auto" />
+                              </div>
+
+                              {/* Image URL Input */}
+                              <div className="space-y-2">
+                                <Label htmlFor="imageUrl" className="text-sm">
+                                  Image URL <span className="text-muted-foreground">(publicly accessible)</span>
+                                </Label>
+                                <Input 
+                                  id="imageUrl"
+                                  placeholder="https://example.com/image.jpg"
+                                  value={imageUrl}
+                                  onChange={(e) => setImageUrl(e.target.value)}
+                                  className="bg-white"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  The image must be hosted on a public URL. Instagram will fetch it during publishing.
+                                </p>
+                              </div>
+
+                              {/* Post Result */}
+                              {instagramPostResult && (
+                                <div className={`p-3 rounded-lg flex items-center gap-2 ${
+                                  instagramPostResult.success 
+                                    ? 'bg-green-50 border border-green-200 text-green-700' 
+                                    : 'bg-red-50 border border-red-200 text-red-700'
+                                }`}>
+                                  {instagramPostResult.success ? (
+                                    <CheckCircle className="w-5 h-5" />
+                                  ) : (
+                                    <AlertCircle className="w-5 h-5" />
+                                  )}
+                                  <span className="text-sm">{instagramPostResult.message}</span>
+                                </div>
+                              )}
+
+                              {/* Post Button */}
+                              <Button 
+                                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                                onClick={handlePostToInstagram}
+                                disabled={isPostingToInstagram || !imageUrl.trim()}
+                              >
+                                {isPostingToInstagram ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Posting to Instagram...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Send className="w-4 h-4 mr-2" />
+                                    Post to Instagram
+                                  </>
+                                )}
+                              </Button>
+                            </>
+                          )}
                         </CardContent>
                       </Card>
                     )}
