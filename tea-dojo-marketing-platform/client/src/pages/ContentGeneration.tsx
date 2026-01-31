@@ -6,6 +6,7 @@
  * - Multi-platform content generation (TikTok, Instagram, Facebook)
  * - Prompt-based editing and regeneration
  * - Video script generation
+ * - LLM-powered content generation
  */
 
 import { useState } from "react";
@@ -26,7 +27,6 @@ import {
   FileText,
   RefreshCw,
   Check,
-  ChevronRight,
   ChevronLeft,
   Send,
   Copy,
@@ -41,11 +41,12 @@ import {
   Zap,
   Upload,
   X,
-  File
+  File,
+  AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import DashboardLayout from "@/components/DashboardLayout";
+import { toast } from "sonner";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -61,46 +62,63 @@ const workflowSteps = [
   { id: 3, title: "Generate Content", icon: Zap, description: "Create content across all platforms" },
 ];
 
-// Sample generated content
-const sampleContent = {
+// Types for generated content
+interface Theme {
+  name: string;
+  slogan: string;
+  description: string;
+  colors: string[];
+  keyMessages: string[];
+}
+
+interface SocialContent {
   instagram: {
-    caption: "Your daily dose of freshness is here! 🍋 Our Hand-Pounded Fragrant Lemon Tea is the perfect way to beat the Singapore heat. Made with real, fresh lemons and our signature tea blend, it's a taste of pure sunshine. ☀️\n\n📍 Visit us at Ang Mo Kio\n🕐 Open daily 10am - 10pm\n\n#TeaDojoSG #FreshlyMade #LemonTea #SGBubbleTea #AngMoKio #BubbleTeaSG",
-    hashtags: ["#TeaDojoSG", "#FreshlyMade", "#LemonTea", "#SGBubbleTea", "#AngMoKio"],
-  },
+    caption: string;
+    hashtags: string[];
+  };
   facebook: {
-    caption: "Ever wondered what goes into our Mango Pomelo Boba? 🥭✨\n\nIt's a delightful mix of fresh mango, juicy pomelo, and of course, our signature boba! The perfect blend of tropical sweetness and chewy goodness.\n\nCome on down to Tea Dojo in Ang Mo Kio to try this fan-favorite. We're open for takeaway and delivery!\n\n🛵 Order now on GrabFood & foodpanda\n📍 Ang Mo Kio Ave 10\n\n#TeaDojo #MangoPomelo #BobaLove #SGEats #BubbleTeaTime",
-    hashtags: ["#TeaDojo", "#MangoPomelo", "#BobaLove", "#SGEats", "#BubbleTeaTime"],
-  },
+    caption: string;
+    hashtags: string[];
+  };
   tiktok: {
-    caption: "From 🥵 to 😎 in one sip. That's the Tea Dojo effect! 🧋✨\n\nPOV: You just discovered the best bubble tea in AMK\n\n#TeaDojoSG #Singapore #BubbleTea #Refreshment #TikTokSG #SGFood #BobaTime #FYP",
-    hashtags: ["#TeaDojoSG", "#Singapore", "#BubbleTea", "#TikTokSG", "#FYP"],
-  },
+    caption: string;
+    hashtags: string[];
+  };
+}
+
+interface VideoScript {
+  title: string;
+  duration: string;
+  scenes: Array<{
+    time: string;
+    visual: string;
+    audio: string;
+    text: string;
+  }>;
+  callToAction: string;
+}
+
+// Default empty theme
+const emptyTheme: Theme = {
+  name: "",
+  slogan: "",
+  description: "",
+  colors: [],
+  keyMessages: [],
 };
 
-const sampleVideoScript = {
-  title: "The Tea Dojo Effect",
-  duration: "15-30 seconds",
-  scenes: [
-    { time: "0-3s", visual: "Person looking tired and hot, wiping sweat", audio: "Trending upbeat audio", text: "When it's 35°C in Singapore..." },
-    { time: "3-8s", visual: "Walking into Tea Dojo store, cool AC visible", audio: "Continue music", text: "But then you remember..." },
-    { time: "8-15s", visual: "Close-up of bubble tea being made, boba falling", audio: "Satisfying sounds", text: "Tea Dojo exists 🧋" },
-    { time: "15-20s", visual: "First sip reaction - eyes widen, smile", audio: "Music drop", text: "That first sip hits different" },
-    { time: "20-25s", visual: "Happy customer with drink, thumbs up", audio: "Music outro", text: "Tea Dojo - Ang Mo Kio" },
-  ],
-  callToAction: "Visit Tea Dojo today! Link in bio 🔗",
+// Default empty content
+const emptyContent: SocialContent = {
+  instagram: { caption: "", hashtags: [] },
+  facebook: { caption: "", hashtags: [] },
+  tiktok: { caption: "", hashtags: [] },
 };
 
-const sampleTheme = {
-  name: "Golden Fortune CNY 2026",
-  slogan: "Huat with Every Sip! 🧧",
-  description: "A festive celebration featuring gold and red accents, prosperity themes, and limited-edition drinks. The campaign emphasizes togetherness, good fortune, and the joy of sharing bubble tea with loved ones during the Chinese New Year season.",
-  colors: ["#C41E3A", "#FFD700", "#8B0000"],
-  keyMessages: [
-    "Limited-edition CNY drinks",
-    "Prosperity bundle deals",
-    "Festive cup designs",
-    "Family sharing sets"
-  ],
+const emptyVideoScript: VideoScript = {
+  title: "",
+  duration: "",
+  scenes: [],
+  callToAction: "",
 };
 
 export default function ContentGeneration() {
@@ -116,6 +134,13 @@ export default function ContentGeneration() {
   const [activeTab, setActiveTab] = useState("social");
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string, size: number}[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [refinementPrompt, setRefinementPrompt] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // Generated content state
+  const [generatedTheme, setGeneratedTheme] = useState<Theme>(emptyTheme);
+  const [generatedContent, setGeneratedContent] = useState<SocialContent>(emptyContent);
+  const [generatedVideoScript, setGeneratedVideoScript] = useState<VideoScript>(emptyVideoScript);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -153,12 +178,39 @@ export default function ContentGeneration() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const handleGenerateTheme = () => {
+  const handleGenerateTheme = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/generate-theme', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          campaignGoal,
+          targetAudience,
+          toneOfVoice,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.theme) {
+        setGeneratedTheme(data.theme);
+        setCurrentStep(2);
+        toast.success("Theme generated successfully!");
+      } else {
+        throw new Error(data.error || 'Failed to generate theme');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate theme';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
       setIsGenerating(false);
-      setCurrentStep(2);
-    }, 2000);
+    }
   };
 
   const handleApproveTheme = () => {
@@ -166,28 +218,118 @@ export default function ContentGeneration() {
     setCurrentStep(3);
   };
 
-  const handleGenerateContent = () => {
+  const handleGenerateContent = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      const response = await fetch('/api/generate-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          theme: generatedTheme,
+          campaignGoal,
+          targetAudience,
+          toneOfVoice,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.content) {
+        setGeneratedContent(data.content.social);
+        setGeneratedVideoScript(data.content.video);
+        setContentGenerated(true);
+        toast.success("Content generated successfully!");
+      } else {
+        throw new Error(data.error || 'Failed to generate content');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate content';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
       setIsGenerating(false);
-      setContentGenerated(true);
-    }, 2500);
+    }
   };
 
-  const handleEditContent = () => {
+  const handleEditContent = async () => {
     if (!editPrompt.trim()) return;
     setIsGenerating(true);
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      const response = await fetch('/api/edit-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentContent: generatedContent,
+          editPrompt,
+          platform: selectedPlatform,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.content) {
+        setGeneratedContent(data.content);
+        setEditPrompt("");
+        toast.success("Content updated successfully!");
+      } else {
+        throw new Error(data.error || 'Failed to edit content');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to edit content';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
       setIsGenerating(false);
-      setEditPrompt("");
-    }, 1500);
+    }
   };
 
-  const handleRegenerate = () => {
+  const handleRegenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      const response = await fetch('/api/regenerate-theme', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentTheme: generatedTheme,
+          refinementPrompt,
+          campaignGoal,
+          targetAudience,
+          toneOfVoice,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.theme) {
+        setGeneratedTheme(data.theme);
+        setRefinementPrompt("");
+        toast.success("Theme regenerated successfully!");
+      } else {
+        throw new Error(data.error || 'Failed to regenerate theme');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate theme';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
+  };
+
+  const handleRegenerateContent = async () => {
+    await handleGenerateContent();
   };
 
   const resetWorkflow = () => {
@@ -196,11 +338,71 @@ export default function ContentGeneration() {
     setContentGenerated(false);
     setCampaignGoal("");
     setTargetAudience("");
+    setGeneratedTheme(emptyTheme);
+    setGeneratedContent(emptyContent);
+    setGeneratedVideoScript(emptyVideoScript);
+    setError(null);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard!");
+  };
+
+  const copyAllContent = () => {
+    const allContent = `
+Instagram:
+${generatedContent.instagram.caption}
+${generatedContent.instagram.hashtags.join(' ')}
+
+Facebook:
+${generatedContent.facebook.caption}
+${generatedContent.facebook.hashtags.join(' ')}
+
+TikTok:
+${generatedContent.tiktok.caption}
+${generatedContent.tiktok.hashtags.join(' ')}
+
+Video Script - ${generatedVideoScript.title}
+Duration: ${generatedVideoScript.duration}
+${generatedVideoScript.scenes.map(s => `${s.time}: ${s.visual} | ${s.text}`).join('\n')}
+CTA: ${generatedVideoScript.callToAction}
+    `.trim();
+    
+    navigator.clipboard.writeText(allContent);
+    toast.success("All content copied to clipboard!");
   };
 
   return (
-    <DashboardLayout>
-      <div className="p-8">
+    <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="container flex items-center justify-between h-16">
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+            </Link>
+            <Separator orientation="vertical" className="h-6" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-display font-bold text-sm">D</span>
+              </div>
+              <span className="font-display font-semibold text-lg text-foreground">Content Studio</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Badge variant="outline" className="bg-primary/5">
+              <Sparkles className="w-3 h-3 mr-1" />
+              AI Powered
+            </Badge>
+          </div>
+        </div>
+      </nav>
+
+      <main className="pt-24 pb-16">
         <div className="container">
           {/* Page Header */}
           <div className="mb-8">
@@ -211,6 +413,17 @@ export default function ContentGeneration() {
               Create stunning marketing content for all platforms with AI assistance
             </p>
           </div>
+
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
+              <div>
+                <p className="font-medium text-destructive">Error</p>
+                <p className="text-sm text-destructive/80">{error}</p>
+              </div>
+            </div>
+          )}
 
           {/* Workflow Progress */}
           <div className="mb-8">
@@ -415,34 +628,39 @@ export default function ContentGeneration() {
                       <CardContent className="space-y-4">
                         <div className="p-4 bg-secondary/50 rounded-lg">
                           <h3 className="font-display font-semibold text-lg text-foreground mb-1">
-                            {sampleTheme.name}
+                            {generatedTheme.name || "Generating..."}
                           </h3>
                           <p className="text-[oklch(0.60_0.12_45)] font-medium mb-3">
-                            {sampleTheme.slogan}
+                            {generatedTheme.slogan}
                           </p>
                           <p className="text-sm text-muted-foreground mb-4">
-                            {sampleTheme.description}
+                            {generatedTheme.description}
                           </p>
-                          <div className="flex gap-2 mb-4">
-                            {sampleTheme.colors.map((color, i) => (
-                              <div 
-                                key={i}
-                                className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                                style={{ backgroundColor: color }}
-                              />
-                            ))}
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Key Messages</p>
-                            <ul className="text-sm space-y-1">
-                              {sampleTheme.keyMessages.map((msg, i) => (
-                                <li key={i} className="flex items-center gap-2">
-                                  <Check className="w-3 h-3 text-primary" />
-                                  {msg}
-                                </li>
+                          {generatedTheme.colors.length > 0 && (
+                            <div className="flex gap-2 mb-4">
+                              {generatedTheme.colors.map((color, i) => (
+                                <div 
+                                  key={i}
+                                  className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
+                                  style={{ backgroundColor: color }}
+                                  title={color}
+                                />
                               ))}
-                            </ul>
-                          </div>
+                            </div>
+                          )}
+                          {generatedTheme.keyMessages.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Key Messages</p>
+                              <ul className="text-sm space-y-1">
+                                {generatedTheme.keyMessages.map((msg, i) => (
+                                  <li key={i} className="flex items-center gap-2">
+                                    <Check className="w-3 h-3 text-primary" />
+                                    {msg}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                         
                         <div className="space-y-2">
@@ -450,6 +668,8 @@ export default function ContentGeneration() {
                           <Textarea 
                             placeholder="e.g., Make it more family-oriented, add more emphasis on sharing..."
                             className="min-h-[80px]"
+                            value={refinementPrompt}
+                            onChange={(e) => setRefinementPrompt(e.target.value)}
                           />
                         </div>
 
@@ -506,8 +726,8 @@ export default function ContentGeneration() {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
-                          <p className="text-sm font-medium text-primary">Theme: {sampleTheme.name}</p>
-                          <p className="text-xs text-muted-foreground">{sampleTheme.slogan}</p>
+                          <p className="text-sm font-medium text-primary">Theme: {generatedTheme.name}</p>
+                          <p className="text-xs text-muted-foreground">{generatedTheme.slogan}</p>
                         </div>
 
                         {!contentGenerated ? (
@@ -592,7 +812,7 @@ export default function ContentGeneration() {
                     <CardTitle className="font-display">Content Preview</CardTitle>
                     {contentGenerated && (
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={copyAllContent}>
                           <Copy className="w-4 h-4 mr-2" />
                           Copy All
                         </Button>
@@ -671,17 +891,26 @@ export default function ContentGeneration() {
                                     </div>
                                   </div>
                                   {/* Post Image */}
-                                  <div className="aspect-square bg-gradient-to-br from-[#C41E3A] to-[#FFD700] flex items-center justify-center">
+                                  <div 
+                                    className="aspect-square flex items-center justify-center"
+                                    style={{
+                                      background: generatedTheme.colors.length >= 2 
+                                        ? `linear-gradient(135deg, ${generatedTheme.colors[0]}, ${generatedTheme.colors[1]})`
+                                        : 'linear-gradient(135deg, #C41E3A, #FFD700)'
+                                    }}
+                                  >
                                     <div className="text-center text-white p-4">
-                                      <p className="font-display text-2xl font-bold mb-2">🧧</p>
-                                      <p className="font-display text-lg font-bold">{sampleTheme.slogan}</p>
-                                      <p className="text-sm mt-2 opacity-90">Limited Edition CNY Drinks</p>
+                                      <p className="font-display text-2xl font-bold mb-2">
+                                        {generatedTheme.slogan.match(/[\u{1F300}-\u{1F9FF}]/gu)?.[0] || '🧋'}
+                                      </p>
+                                      <p className="font-display text-lg font-bold">{generatedTheme.slogan}</p>
+                                      <p className="text-sm mt-2 opacity-90">{generatedTheme.keyMessages[0]}</p>
                                     </div>
                                   </div>
                                   {/* Caption Preview */}
                                   <div className="p-3">
                                     <p className="text-xs text-gray-800 line-clamp-3">
-                                      {sampleContent[selectedPlatform as keyof typeof sampleContent].caption.substring(0, 100)}...
+                                      {generatedContent[selectedPlatform as keyof typeof generatedContent].caption.substring(0, 100)}...
                                     </p>
                                   </div>
                                 </div>
@@ -694,14 +923,14 @@ export default function ContentGeneration() {
                                 <Label className="text-sm font-medium mb-2 block">Caption</Label>
                                 <div className="p-4 bg-secondary/30 rounded-lg">
                                   <p className="text-sm whitespace-pre-line">
-                                    {sampleContent[selectedPlatform as keyof typeof sampleContent].caption}
+                                    {generatedContent[selectedPlatform as keyof typeof generatedContent].caption}
                                   </p>
                                 </div>
                               </div>
                               <div>
                                 <Label className="text-sm font-medium mb-2 block">Hashtags</Label>
                                 <div className="flex flex-wrap gap-2">
-                                  {sampleContent[selectedPlatform as keyof typeof sampleContent].hashtags.map((tag, i) => (
+                                  {generatedContent[selectedPlatform as keyof typeof generatedContent].hashtags.map((tag, i) => (
                                     <Badge key={i} variant="secondary" className="text-xs">
                                       {tag}
                                     </Badge>
@@ -709,12 +938,26 @@ export default function ContentGeneration() {
                                 </div>
                               </div>
                               <div className="flex gap-2 pt-4">
-                                <Button variant="outline" size="sm" className="flex-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="flex-1"
+                                  onClick={() => copyToClipboard(
+                                    generatedContent[selectedPlatform as keyof typeof generatedContent].caption + '\n\n' +
+                                    generatedContent[selectedPlatform as keyof typeof generatedContent].hashtags.join(' ')
+                                  )}
+                                >
                                   <Copy className="w-4 h-4 mr-2" />
                                   Copy
                                 </Button>
-                                <Button variant="outline" size="sm" className="flex-1">
-                                  <RefreshCw className="w-4 h-4 mr-2" />
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="flex-1"
+                                  onClick={handleRegenerateContent}
+                                  disabled={isGenerating}
+                                >
+                                  <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
                                   Regenerate
                                 </Button>
                               </div>
@@ -741,19 +984,24 @@ export default function ContentGeneration() {
                         <div className="space-y-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h3 className="font-display font-semibold text-lg">{sampleVideoScript.title}</h3>
-                              <p className="text-sm text-muted-foreground">Duration: {sampleVideoScript.duration}</p>
+                              <h3 className="font-display font-semibold text-lg">{generatedVideoScript.title}</h3>
+                              <p className="text-sm text-muted-foreground">Duration: {generatedVideoScript.duration}</p>
                             </div>
                             <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <RefreshCw className="w-4 h-4 mr-2" />
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={handleRegenerateContent}
+                                disabled={isGenerating}
+                              >
+                                <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
                                 Regenerate
                               </Button>
                             </div>
                           </div>
 
                           <div className="space-y-3">
-                            {sampleVideoScript.scenes.map((scene, i) => (
+                            {generatedVideoScript.scenes.map((scene, i) => (
                               <div key={i} className="p-4 bg-secondary/30 rounded-lg border-l-4 border-primary">
                                 <div className="flex items-start justify-between mb-2">
                                   <Badge variant="outline" className="text-xs">{scene.time}</Badge>
@@ -767,7 +1015,7 @@ export default function ContentGeneration() {
 
                           <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                             <p className="text-sm font-medium text-primary">Call to Action</p>
-                            <p className="text-sm text-foreground">{sampleVideoScript.callToAction}</p>
+                            <p className="text-sm text-foreground">{generatedVideoScript.callToAction}</p>
                           </div>
                         </div>
                       ) : (
@@ -793,7 +1041,15 @@ export default function ContentGeneration() {
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {[1, 2, 3, 4, 5, 6].map((i) => (
-                              <div key={i} className="aspect-square rounded-lg bg-gradient-to-br from-[#C41E3A]/20 to-[#FFD700]/20 border border-border flex items-center justify-center group cursor-pointer hover:border-primary transition-colors">
+                              <div 
+                                key={i} 
+                                className="aspect-square rounded-lg border border-border flex items-center justify-center group cursor-pointer hover:border-primary transition-colors"
+                                style={{
+                                  background: generatedTheme.colors.length >= 2 
+                                    ? `linear-gradient(135deg, ${generatedTheme.colors[0]}20, ${generatedTheme.colors[1]}20)`
+                                    : 'linear-gradient(135deg, #C41E3A20, #FFD70020)'
+                                }}
+                              >
                                 <div className="text-center p-4">
                                   <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                   <p className="text-xs text-muted-foreground">Visual {i}</p>
@@ -826,7 +1082,7 @@ export default function ContentGeneration() {
             </div>
           </div>
         </div>
-      </div>
-    </DashboardLayout>
+      </main>
+    </div>
   );
 }
