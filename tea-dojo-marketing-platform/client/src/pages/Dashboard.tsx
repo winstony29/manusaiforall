@@ -1,5 +1,5 @@
 /**
- * Dashboard Page - Drinknovate Marketing Platform
+ * Dashboard Page - BrewLab Marketing Platform
  * Shows created post analytics and overview
  */
 

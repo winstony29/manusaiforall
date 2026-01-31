@@ -1,5 +1,5 @@
 /**
- * Campaigns Page - Drinknovate Marketing Platform
+ * Campaigns Page - BrewLab Marketing Platform
  * Social media marketing campaigns management
  */
 

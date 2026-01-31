@@ -1,5 +1,5 @@
 /**
- * Content Generation Page - Drinknovate Marketing Platform
+ * Content Generation Page - BrewLab Marketing Platform
  * Design: Warm Tech Naturalism
  * Features:
  * - Thematic Campaign Workflow (preview, iterate, generate)
@@ -203,13 +203,15 @@ export default function ContentGeneration() {
     setGeneratedVisuals([]);
   };
 
+  const generateVisualsMutation = trpc.content.generateVisuals.useMutation();
+
   const handleGenerateVisuals = async () => {
     setIsGeneratingVisuals(true);
     try {
       // Generate 3 visuals for different platforms
       const platforms: ("instagram" | "facebook" | "tiktok")[] = ["instagram", "facebook", "tiktok"];
       const visualPromises = platforms.map(platform => 
-        trpc.content.generateVisuals.mutate({
+        generateVisualsMutation.mutateAsync({
           theme: sampleTheme.name,
           platform,
           caption: sampleContent[platform].caption,
@@ -218,7 +220,7 @@ export default function ContentGeneration() {
       );
       
       const results = await Promise.all(visualPromises);
-      const imageUrls = results.map(r => r.imageUrl).filter(Boolean) as string[];
+      const imageUrls = results.map((r: { imageUrl: string | undefined }) => r.imageUrl).filter(Boolean) as string[];
       setGeneratedVisuals(imageUrls);
       toast.success("Visuals generated successfully!");
     } catch (error) {
