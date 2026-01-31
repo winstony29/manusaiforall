@@ -298,7 +298,7 @@ export default function CreateCampaign() {
     localStorage.setItem('campaignDrafts', JSON.stringify(drafts));
     
     toast.success('Campaign saved as draft!');
-    setLocation('/campaigns');
+    setLocation('/dashboard/campaigns');
   };
 
   // Color editing functions
