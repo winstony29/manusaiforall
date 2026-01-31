@@ -1,5 +1,5 @@
 /**
- * Dashboard Layout - Drinknovate Marketing Platform
+ * Dashboard Layout - BrewLab Marketing Platform
  * Sidebar navigation with main content area
  */
 
@@ -55,9 +55,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer group">
               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold text-lg">D</span>
+                <span className="text-primary-foreground font-display font-bold text-lg">B</span>
               </div>
-              <span className="font-display font-semibold text-xl text-foreground">Drinknovate</span>
+              <span className="font-display font-semibold text-xl text-foreground">BrewLab</span>
             </div>
           </Link>
         </div>

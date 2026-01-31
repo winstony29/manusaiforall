@@ -1,5 +1,5 @@
 /**
- * Calendar Page - Drinknovate Marketing Platform
+ * Calendar Page - BrewLab Marketing Platform
  * Promotional calendar with Singapore-specific events
  */
 

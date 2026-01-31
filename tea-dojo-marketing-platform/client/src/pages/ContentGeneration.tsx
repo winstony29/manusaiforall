@@ -1,5 +1,5 @@
 /**
- * Content Generation Page - Drinknovate Marketing Platform
+ * Content Generation Page - BrewLab Marketing Platform
  * Design: Warm Tech Naturalism
  * Features:
  * - Thematic Campaign Workflow (preview, iterate, generate)
