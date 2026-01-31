@@ -14,6 +14,8 @@ import CreatePost from "./pages/CreatePost";
 import CreateCampaign from "./pages/CreateCampaign";
 import CampaignsList from "./pages/CampaignsList";
 import PostsList from "./pages/PostsList";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 
 
 function Router() {
@@ -30,6 +32,8 @@ function Router() {
       <Route path={"/dashboard/campaigns"} component={CampaignsList} />
       <Route path={"/dashboard/campaigns/:id"} component={CampaignsList} />
       <Route path={"/dashboard/posts"} component={PostsList} />
+      <Route path={"/dashboard/settings"} component={Settings} />
+      <Route path={"/dashboard/help"} component={Help} />
       
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
