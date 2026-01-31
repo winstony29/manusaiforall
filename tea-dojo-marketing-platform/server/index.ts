@@ -24,7 +24,7 @@ interface Theme {
   slogan: string;
   description: string;
   colors: string[];
-  colorPalettes: ColorPalette[]; // Multiple palette options with names
+  colorPalettes: ColorPalette[];
   selectedPaletteIndex: number;
   keyMessages: string[];
 }
@@ -56,11 +56,22 @@ interface VideoScript {
   callToAction: string;
 }
 
+interface MerchandiseDesign {
+  type: string;
+  category: 'packaging' | 'apparel';
+  designPrompt: string;
+  specifications: string;
+}
+
 interface ContentRequest {
   theme: Theme;
+  themePrompt?: string;
+  formats?: string[];
+  merchandise?: string[];
+  generateCaptions?: boolean;
   campaignGoal: string;
   targetAudience: string;
-  toneOfVoice: string;
+  toneOfVoice?: string;
 }
 
 // Generate campaign theme using LLM
@@ -129,11 +140,9 @@ Respond ONLY with the JSON object, no additional text.`;
     let colorPalettes: ColorPalette[];
     
     if (Array.isArray(parsedTheme.colorPalettes)) {
-      // Check if colorPalettes are already objects or just arrays
       if (parsedTheme.colorPalettes[0] && typeof parsedTheme.colorPalettes[0] === 'object' && !Array.isArray(parsedTheme.colorPalettes[0])) {
         colorPalettes = parsedTheme.colorPalettes;
       } else {
-        // Convert arrays to objects with names
         colorPalettes = parsedTheme.colorPalettes.map((colors: string[], index: number) => ({
           name: paletteNames[index] || `Option ${index + 1}`,
           colors: colors
@@ -164,10 +173,17 @@ Respond ONLY with the JSON object, no additional text.`;
   }
 });
 
-// Generate social media content using LLM
+// Generate social media content using LLM with theme-based prompts
 app.post('/api/generate-content', async (req, res) => {
   try {
-    const { theme, campaignGoal, targetAudience, toneOfVoice } = req.body as ContentRequest;
+    const { theme, themePrompt, formats, merchandise, generateCaptions, campaignGoal, targetAudience, toneOfVoice } = req.body as ContentRequest;
+
+    // Get selected color palette
+    const selectedPalette = theme.colorPalettes[theme.selectedPaletteIndex] || theme.colorPalettes[0];
+    const colorString = selectedPalette?.colors?.join(', ') || theme.colors?.join(', ') || '';
+    
+    // Build comprehensive theme prompt for all generations
+    const fullThemePrompt = themePrompt || `Theme: "${theme.name}" - ${theme.slogan}. ${theme.description}. Key messages: ${theme.keyMessages.join(', ')}. Color palette (${selectedPalette?.name || 'Primary'}): ${colorString}. Target audience: ${targetAudience}. Tone: ${toneOfVoice || 'engaging'}.`;
 
     const socialPrompt = `You are a social media content creator for Tea Dojo, a bubble tea brand in Singapore. Create engaging social media posts based on:
 
@@ -175,9 +191,12 @@ Campaign Theme: ${theme.name}
 Slogan: ${theme.slogan}
 Description: ${theme.description}
 Key Messages: ${theme.keyMessages.join(', ')}
+Color Palette: ${colorString}
 Campaign Goal: ${campaignGoal}
 Target Audience: ${targetAudience}
-Tone of Voice: ${toneOfVoice}
+Tone of Voice: ${toneOfVoice || 'engaging'}
+
+Full Theme Context: ${fullThemePrompt}
 
 Generate a JSON response with social media content for all platforms:
 {
@@ -224,19 +243,23 @@ Respond ONLY with the JSON object, no additional text.`;
     socialResponseText = socialResponseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const socialContent: SocialContent = JSON.parse(socialResponseText);
 
-    // Generate video script
+    // Generate video script with theme-based prompts
     const videoPrompt = `Create a TikTok/Reels video script for Tea Dojo bubble tea based on:
 
 Campaign Theme: ${theme.name}
 Slogan: ${theme.slogan}
-Tone: ${toneOfVoice}
+Description: ${theme.description}
+Color Palette: ${colorString}
+Tone: ${toneOfVoice || 'engaging'}
+
+Full Theme Context: ${fullThemePrompt}
 
 Generate a JSON response:
 {
   "title": "Video title",
   "duration": "15-30 seconds",
   "scenes": [
-    {"time": "0-3s", "visual": "Scene description", "audio": "Audio/music description", "text": "On-screen text"},
+    {"time": "0-3s", "visual": "Scene description incorporating campaign colors and theme", "audio": "Audio/music description", "text": "On-screen text"},
     {"time": "3-8s", "visual": "Scene description", "audio": "Audio description", "text": "On-screen text"},
     {"time": "8-15s", "visual": "Scene description", "audio": "Audio description", "text": "On-screen text"},
     {"time": "15-20s", "visual": "Scene description", "audio": "Audio description", "text": "On-screen text"},
@@ -245,7 +268,7 @@ Generate a JSON response:
   "callToAction": "Call to action text"
 }
 
-Make it engaging, trendy, and specific to the campaign theme.
+Make it engaging, trendy, and specific to the campaign theme. Incorporate the color palette visually.
 Respond ONLY with the JSON object.`;
 
     const videoCompletion = await openai.chat.completions.create({
@@ -267,18 +290,162 @@ Respond ONLY with the JSON object.`;
     videoResponseText = videoResponseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const videoScript: VideoScript = JSON.parse(videoResponseText);
 
+    // Generate merchandise designs if requested
+    let merchandiseDesigns: MerchandiseDesign[] = [];
+    
+    if (merchandise && merchandise.length > 0) {
+      const merchPrompt = `You are a product designer for Tea Dojo bubble tea brand. Create detailed design prompts for merchandise items based on:
+
+Campaign Theme: ${theme.name}
+Slogan: ${theme.slogan}
+Description: ${theme.description}
+Color Palette: ${colorString}
+Tone of Voice: ${toneOfVoice || 'engaging'}
+
+Full Theme Context: ${fullThemePrompt}
+
+Generate design prompts for these items: ${merchandise.join(', ')}
+
+Return a JSON array with each item:
+[
+  {
+    "type": "Item name (e.g., Cup Design, Bag Design, T-Shirt Design)",
+    "category": "packaging" or "apparel",
+    "designPrompt": "Detailed design prompt including: visual elements, color usage (use the campaign colors: ${colorString}), typography style, placement of logo/slogan, theme-specific elements, and overall aesthetic direction. Be specific about how to incorporate the campaign theme and slogan.",
+    "specifications": "Technical specifications for production"
+  }
+]
+
+Make each design:
+- Cohesive with the campaign theme and colors
+- Include the slogan or key messages where appropriate
+- Feature bubble tea related elements subtly
+- Be print-ready and production-appropriate
+
+Respond ONLY with the JSON array.`;
+
+      try {
+        const merchCompletion = await openai.chat.completions.create({
+          model: 'gpt-4.1-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a product designer. Always respond with valid JSON only.',
+            },
+            {
+              role: 'user',
+              content: merchPrompt,
+            },
+          ],
+          temperature: 0.8,
+        });
+
+        let merchResponseText = merchCompletion.choices[0]?.message?.content || '[]';
+        merchResponseText = merchResponseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        merchandiseDesigns = JSON.parse(merchResponseText);
+      } catch (merchError) {
+        console.error('Error generating merchandise designs:', merchError);
+      }
+    }
+
+    // Generate image/video prompts for each selected format with theme integration
+    const socialPosts = formats?.map(formatId => {
+      const isVideo = formatId.includes('video') || formatId.includes('reel');
+      const platform = formatId.split('-')[0];
+      const aspectRatio = formatId.includes('square') ? '1:1' : 
+                         formatId.includes('portrait') ? '4:5' : 
+                         formatId.includes('story') || formatId.includes('reel') || formatId.includes('tiktok') ? '9:16' : '1.91:1';
+      
+      const platformContent = socialContent[platform as keyof SocialContent];
+      
+      return {
+        platform,
+        format: formatId,
+        contentType: isVideo ? 'video' : 'image',
+        aspectRatio,
+        caption: platformContent?.caption || '',
+        hashtags: platformContent?.hashtags?.join(' ') || '',
+        imagePrompt: !isVideo ? `Create a ${aspectRatio} marketing image for Tea Dojo's "${theme.name}" campaign. Theme: ${theme.description}. Slogan: "${theme.slogan}". Use these colors prominently: ${colorString}. Style: ${toneOfVoice || 'engaging'}, modern, eye-catching. Feature bubble tea drinks with ${theme.keyMessages[0] || 'refreshing appeal'}. Target audience: ${targetAudience}.` : undefined,
+        videoPrompt: isVideo ? `Create a ${aspectRatio} marketing video for Tea Dojo's "${theme.name}" campaign. Theme: ${theme.description}. Slogan: "${theme.slogan}". Color scheme: ${colorString}. Tone: ${toneOfVoice || 'engaging'}. Show bubble tea preparation, happy customers, and brand messaging. Include text overlays with key message: "${theme.keyMessages[0] || theme.slogan}".` : undefined
+      };
+    }) || [];
+
     res.json({ 
       success: true, 
       content: {
         social: socialContent,
         video: videoScript,
-      }
+      },
+      socialPosts,
+      videoScript: {
+        scenes: videoScript.scenes?.map((scene, index) => ({
+          sceneNumber: index + 1,
+          duration: scene.time,
+          visualDescription: `${scene.visual}. Use campaign colors: ${colorString}. ${scene.text ? `Text overlay: "${scene.text}"` : ''}`
+        }))
+      },
+      merchandiseDesigns,
+      themePrompt: fullThemePrompt
     });
   } catch (error) {
     console.error('Error generating content:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to generate content',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Generate single post content
+app.post('/api/generate-post', async (req, res) => {
+  try {
+    const { format, description, targetAudience, generateCaption } = req.body;
+
+    const prompt = `You are a social media content creator for Tea Dojo, a bubble tea brand in Singapore. Create content for a single post:
+
+Platform: ${format.platform}
+Format: ${format.label}
+Content Type: ${format.contentType}
+Aspect Ratio: ${format.aspectRatio}
+Post Description: ${description}
+Target Audience: ${targetAudience || 'General audience'}
+
+Generate a JSON response:
+{
+  "caption": "Engaging caption with emojis (if generateCaption is true)",
+  "hashtags": ["#relevant", "#hashtags"],
+  "imagePrompt": "Detailed image generation prompt (if content type is image)",
+  "videoScript": "Video script with scenes (if content type is video)"
+}
+
+Make it specific to the platform and engaging for the target audience.
+Respond ONLY with the JSON object.`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a social media content creator. Always respond with valid JSON only.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.8,
+    });
+
+    let responseText = completion.choices[0]?.message?.content || '{}';
+    responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const content = JSON.parse(responseText);
+
+    res.json(content);
+  } catch (error) {
+    console.error('Error generating post:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate post',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
@@ -379,16 +546,13 @@ Respond ONLY with the JSON object.`;
     regenResponseText = regenResponseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsedTheme = JSON.parse(regenResponseText);
     
-    // Ensure we have the new structure with colorPalettes as objects
     const paletteNames = ['Classic', 'Modern', 'Soft'];
     let colorPalettes: ColorPalette[];
     
     if (Array.isArray(parsedTheme.colorPalettes)) {
-      // Check if colorPalettes are already objects or just arrays
       if (parsedTheme.colorPalettes[0] && typeof parsedTheme.colorPalettes[0] === 'object' && !Array.isArray(parsedTheme.colorPalettes[0])) {
         colorPalettes = parsedTheme.colorPalettes;
       } else {
-        // Convert arrays to objects with names
         colorPalettes = parsedTheme.colorPalettes.map((colors: string[], index: number) => ({
           name: paletteNames[index] || `Option ${index + 1}`,
           colors: colors
@@ -419,7 +583,7 @@ Respond ONLY with the JSON object.`;
   }
 });
 
-// Regenerate only color palettes (independent of theme)
+// Regenerate only color palettes
 app.post('/api/regenerate-palette', async (req, res) => {
   try {
     const { themeName, themeDescription, campaignGoal } = req.body;
@@ -484,6 +648,66 @@ Respond ONLY with the JSON object.`;
     res.status(500).json({ 
       success: false, 
       error: 'Failed to regenerate palette',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Generate merchandise designs standalone
+app.post('/api/generate-merchandise', async (req, res) => {
+  try {
+    const { theme, merchandise, toneOfVoice } = req.body;
+
+    const selectedPalette = theme.colorPalettes[theme.selectedPaletteIndex] || theme.colorPalettes[0];
+    const colorString = selectedPalette?.colors?.join(', ') || theme.colors?.join(', ') || '';
+
+    const merchPrompt = `You are a product designer for Tea Dojo bubble tea brand. Create detailed design prompts for merchandise items based on:
+
+Campaign Theme: ${theme.name}
+Slogan: ${theme.slogan}
+Description: ${theme.description}
+Color Palette: ${colorString}
+Tone of Voice: ${toneOfVoice || 'engaging'}
+
+Generate design prompts for these items: ${merchandise.join(', ')}
+
+Return a JSON array with each item:
+[
+  {
+    "type": "Item name",
+    "category": "packaging" or "apparel",
+    "designPrompt": "Detailed design prompt with visual elements, color usage, typography, logo placement, and theme elements",
+    "specifications": "Technical specifications for production"
+  }
+]
+
+Respond ONLY with the JSON array.`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a product designer. Always respond with valid JSON only.',
+        },
+        {
+          role: 'user',
+          content: merchPrompt,
+        },
+      ],
+      temperature: 0.8,
+    });
+
+    let merchResponseText = completion.choices[0]?.message?.content || '[]';
+    merchResponseText = merchResponseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const merchandiseDesigns = JSON.parse(merchResponseText);
+
+    res.json({ success: true, merchandiseDesigns });
+  } catch (error) {
+    console.error('Error generating merchandise:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to generate merchandise designs',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
