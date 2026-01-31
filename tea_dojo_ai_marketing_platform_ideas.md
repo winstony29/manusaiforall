@@ -29,8 +29,17 @@ A powerful copywriting tool that generates persuasive and on-brand text for vari
 *   **Customizable Tone of Voice:** Define and select from multiple tone-of-voice profiles (e.g., playful, sophisticated, informative) to ensure all generated copy aligns with the campaign's objectives.
 *   **Key Messaging Integration:** Input key messages, promotions, or product highlights, and the AI will seamlessly weave them into the generated copy.
 *   **Iterative Refinement:** Allow users to guide the AI by providing feedback and prompts to refine and perfect the generated content for greater customizability.
+*   **Prompt-Based Editing:** After content has been generated, users can make specific edits using natural language commands (e.g., "Make the tone more playful," "Add a call-to-action to visit our store," or "Change the hashtag to #TeaDojoSpecials").
 
-### 1.2. AI Event & Experiential Marketing Ideas
+### 1.2. Thematic Campaign Workflow
+
+A new workflow that allows for iterative development of marketing campaigns. Instead of generating all content at once, this feature introduces a confirmation step to ensure the overall theme is approved before full-scale content creation.
+
+*   **Theme Preview:** The AI will first generate a high-level campaign theme, including a sample visual, a key slogan, and a brief description of the concept. This gives the user a clear idea of the campaign's direction.
+*   **Iterative Configuration:** Users can provide feedback on the theme and prompt the AI to make adjustments until they are satisfied. This ensures the final campaign is perfectly aligned with their vision.
+*   **Multi-Format Generation:** Once the theme is confirmed, the AI will proceed to generate the full suite of content in various formats (Instagram posts, TikTok videos, Facebook stories, etc.), all based on the approved theme.
+
+### 1.3. AI Event & Experiential Marketing Ideas
 
 A feature to brainstorm and generate concepts for in-person events and experiential marketing campaigns that bring the Tea Dojo brand to life. The AI will be able to suggest:
 
@@ -47,6 +56,14 @@ An advanced visual generation feature to create stunning images and short videos
 *   **Platform-Specific Adaptation:** Automatically adapt the generated visuals to the specific dimensions and requirements of different social media platforms.
 *   **Merchandise and Packaging Design:** Generate creative designs for merchandise (tote bags, tumblers), and packaging (cups, straws, bags), inspired by brands like Chagee.
 
+### 1.5. AI Mailing List Email Generation
+
+Extend the platform's copywriting capabilities to email marketing, allowing for the creation of engaging content for Tea Dojo's mailing list subscribers.
+
+*   **Newsletter Content:** Generate content for regular newsletters, including new product announcements, behind-the-scenes stories, and curated content related to tea culture.
+*   **Promotional Emails:** Create persuasive email copy for special promotions, discounts, and limited-time offers, with clear calls-to-action to drive sales.
+*   **Customer Retention Emails:** Generate personalized emails for customer retention campaigns, such as birthday rewards, loyalty program updates, and "we miss you" offers.
+
 ### 1.4. AI Video Script Generation
 
 To complement the visual generation capabilities, this feature will generate scripts for short-form videos on platforms like TikTok and Instagram Reels. The AI will be able to:
@@ -57,12 +74,14 @@ To complement the visual generation capabilities, this feature will generate scr
 
 ## 2. Content Strategy and Management
 
-### 2.1. Content Calendar Integration
+### 2.1. Smart Content Calendar with AI-Driven Scheduling
 
-A smart content calendar to plan, schedule, and automate content distribution across multiple channels. The calendar will feature:
+A dynamic content calendar that not only helps plan and schedule content but also uses AI to optimize the content strategy in real-time.
 
-*   **Automated Scheduling:** Schedule the generated content to be posted automatically on different social media platforms at optimal times.
-*   **Promotional Event Forecasting:** A built-in calendar that forecasts major promotional events and holidays in Singapore (e.g., National Day, Chinese New Year, Christmas). The calendar will also suggest campaign ideas for these events.
+*   **AI-Suggested Campaign Timelines:** For any given campaign or seasonal event, the AI will propose a detailed rollout timeline, including suggested dates and times for each social media post to maximize reach and engagement.
+*   **Automated Scheduling & Posting:** Schedule the generated content to be posted automatically on different social media platforms at optimal times based on the AI's recommendations.
+*   **Dynamic Timeline Adjustments:** The calendar will be connected to the performance analytics dashboard. If the AI detects that engagement is lower than expected for a campaign, it can suggest increasing the posting frequency or adjusting the content strategy. Conversely, if a campaign is performing well, it will recommend maintaining the current schedule.
+*   **Promotional Event Forecasting:** A built-in calendar that forecasts major promotional events and holidays in Singapore (e.g., National Day, Chinese New Year, Christmas) and provides AI-suggested campaign concepts for each.
 *   **Custom Event Planning:** Allow the marketing team to add their own promotional events, such as Tea Dojo's anniversary, to the calendar.
 
 ### 2.2. One-Click Posting
