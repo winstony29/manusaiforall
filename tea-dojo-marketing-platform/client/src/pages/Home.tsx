@@ -29,6 +29,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -62,7 +63,9 @@ export default function Home() {
             <a href="#analytics" className="text-muted-foreground hover:text-foreground transition-colors">Analytics</a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">Get Started</Button>
+          <Link href="/generate">
+            <Button className="bg-primary hover:bg-primary/90">Get Started</Button>
+          </Link>
         </div>
       </nav>
 
@@ -94,10 +97,12 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8">
-                Start Creating
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+              <Link href="/generate">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8">
+                  Start Creating
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
               <Button size="lg" variant="outline" className="text-lg px-8 border-primary/30 hover:bg-primary/5">
                 Watch Demo
               </Button>
@@ -484,10 +489,12 @@ export default function Home() {
               Join Tea Dojo in revolutionizing how bubble tea brands connect with their audience. Start creating AI-powered content today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8">
-                Get Started Free
-                <Sparkles className="ml-2 w-5 h-5" />
-              </Button>
+              <Link href="/generate">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8">
+                  Get Started Free
+                  <Sparkles className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
               <Button size="lg" variant="outline" className="text-lg px-8 border-primary/30 hover:bg-primary/5">
                 Schedule a Demo
               </Button>
