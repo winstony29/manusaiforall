@@ -611,20 +611,45 @@ CTA: ${generatedVideoScript.callToAction}
                             onChange={(e) => setTargetAudience(e.target.value)}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="tone">Tone of Voice</Label>
-                          <Select value={toneOfVoice} onValueChange={setToneOfVoice}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="playful">Playful & Fun</SelectItem>
-                              <SelectItem value="sophisticated">Sophisticated & Premium</SelectItem>
-                              <SelectItem value="informative">Informative & Educational</SelectItem>
-                              <SelectItem value="energetic">Energetic & Exciting</SelectItem>
-                              <SelectItem value="warm">Warm & Friendly</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        <div className="space-y-3">
+                          <Label>Tone of Voice</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { value: 'playful', label: 'Playful & Fun', emoji: '🎉' },
+                              { value: 'sophisticated', label: 'Sophisticated & Premium', emoji: '✨' },
+                              { value: 'informative', label: 'Informative & Educational', emoji: '📚' },
+                              { value: 'energetic', label: 'Energetic & Exciting', emoji: '⚡' },
+                              { value: 'warm', label: 'Warm & Friendly', emoji: '🤗' },
+                            ].map((tone) => (
+                              <label
+                                key={tone.value}
+                                className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                  toneOfVoice === tone.value
+                                    ? 'border-primary bg-primary/10 shadow-sm'
+                                    : 'border-border hover:border-primary/50 hover:bg-secondary/30'
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="toneOfVoice"
+                                  value={tone.value}
+                                  checked={toneOfVoice === tone.value}
+                                  onChange={(e) => setToneOfVoice(e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                  toneOfVoice === tone.value
+                                    ? 'border-primary bg-primary'
+                                    : 'border-muted-foreground'
+                                }`}>
+                                  {toneOfVoice === tone.value && (
+                                    <div className="w-2 h-2 rounded-full bg-white" />
+                                  )}
+                                </div>
+                                <span className="text-sm font-medium">{tone.emoji} {tone.label}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
                         
                         {/* File Upload Dropzone */}
