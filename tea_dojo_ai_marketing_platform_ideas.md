@@ -30,7 +30,15 @@ A powerful copywriting tool that generates persuasive and on-brand text for vari
 *   **Key Messaging Integration:** Input key messages, promotions, or product highlights, and the AI will seamlessly weave them into the generated copy.
 *   **Iterative Refinement:** Allow users to guide the AI by providing feedback and prompts to refine and perfect the generated content for greater customizability.
 
-### 1.2. AI Visual Generation
+### 1.2. AI Event & Experiential Marketing Ideas
+
+A feature to brainstorm and generate concepts for in-person events and experiential marketing campaigns that bring the Tea Dojo brand to life. The AI will be able to suggest:
+
+*   **Interactive Workshops:** Generate ideas for hands-on workshops like "Make Your Own Bubble Tea," where customers can learn how to create their favorite drinks. The AI can outline the workshop format, required materials, and even generate promotional copy for the event.
+*   **Themed Tasting Sessions:** Suggest themed tea tasting events, such as a "Journey Through Tea" session that explores different tea types and their origins, or a "Perfect Pairings" event that matches Tea Dojo drinks with local snacks.
+*   **Pop-Up Collaborations:** Identify potential collaboration partners (e.g., local bakeries, lifestyle brands) and generate ideas for joint pop-up events that can expand Tea Dojo's reach to new audiences.
+
+### 1.3. AI Visual Generation
 
 An advanced visual generation feature to create stunning images and short videos for various marketing needs. The AI will be capable of:
 
@@ -38,6 +46,14 @@ An advanced visual generation feature to create stunning images and short videos
 *   **Lifestyle Content:** Create engaging lifestyle images and videos that showcase the Tea Dojo experience, aligning with the brand's fun and energetic identity.
 *   **Platform-Specific Adaptation:** Automatically adapt the generated visuals to the specific dimensions and requirements of different social media platforms.
 *   **Merchandise and Packaging Design:** Generate creative designs for merchandise (tote bags, tumblers), and packaging (cups, straws, bags), inspired by brands like Chagee.
+
+### 1.4. AI Video Script Generation
+
+To complement the visual generation capabilities, this feature will generate scripts for short-form videos on platforms like TikTok and Instagram Reels. The AI will be able to:
+
+*   **Generate Platform-Specific Scripts:** Create scripts tailored to the format and style of different video platforms, including scene descriptions, dialogue, on-screen text, and suggestions for trending audio.
+*   **Incorporate Key Messaging:** Seamlessly integrate key messages, product highlights, and calls-to-action into the video scripts.
+*   **Multiple Script Variations:** Generate multiple script variations for a single concept, allowing the marketing team to choose the one that best fits their vision.
 
 ## 2. Content Strategy and Management
 
