@@ -16,7 +16,8 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  ChevronLeft
+  ChevronLeft,
+  ExternalLink
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -25,10 +26,10 @@ interface DashboardLayoutProps {
 }
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/dashboard/generate", icon: Sparkles, label: "Generate" },
-  { href: "/dashboard/calendar", icon: Calendar, label: "Calendar" },
-  { href: "/dashboard/campaigns", icon: Megaphone, label: "Campaigns" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", external: false },
+  { href: "/dashboard/generate", icon: Sparkles, label: "Generate", external: false },
+  { href: "https://teacalendar-2agrwlqk.manus.space/", icon: Calendar, label: "Calendar", external: true },
+  { href: "/dashboard/campaigns", icon: Megaphone, label: "Campaigns", external: false },
 ];
 
 const bottomNavItems = [
@@ -65,23 +66,44 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Main Navigation */}
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
-            const active = isActive(item.href);
+            const active = !item.external && isActive(item.href);
+            
+            const navContent = (
+              <motion.div
+                whileHover={{ x: 4 }}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                  active 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+                {item.label === "Generate" && (
+                  <Badge className="ml-auto bg-accent text-accent-foreground text-xs">AI</Badge>
+                )}
+                {item.external && (
+                  <ExternalLink className="w-4 h-4 ml-auto opacity-50" />
+                )}
+              </motion.div>
+            );
+            
+            if (item.external) {
+              return (
+                <a 
+                  key={item.href} 
+                  href={item.href} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  {navContent}
+                </a>
+              );
+            }
+            
             return (
               <Link key={item.href} href={item.href}>
-                <motion.div
-                  whileHover={{ x: 4 }}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
-                    active 
-                      ? "bg-primary text-primary-foreground" 
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                  {item.label === "Generate" && (
-                    <Badge className="ml-auto bg-accent text-accent-foreground text-xs">AI</Badge>
-                  )}
-                </motion.div>
+                {navContent}
               </Link>
             );
           })}
