@@ -7,7 +7,6 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -31,10 +30,43 @@ import {
   Clock,
   ExternalLink,
   ChevronRight,
+  ChevronDown,
   Info
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
+
+// Custom expandable item component to replace Accordion
+function ExpandableItem({ 
+  trigger, 
+  children, 
+  defaultOpen = false,
+  className = ""
+}: { 
+  trigger: React.ReactNode; 
+  children: React.ReactNode; 
+  defaultOpen?: boolean;
+  className?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  return (
+    <div className={`border rounded-lg ${className}`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-secondary/50 transition-colors rounded-lg"
+      >
+        <div className="flex-1">{trigger}</div>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="px-4 pb-4 pt-0 text-sm text-muted-foreground border-t">
+          <div className="pt-3">{children}</div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Comprehensive help content data
 const troubleshootingGuides = [
@@ -315,32 +347,28 @@ const howToGuides = [
     steps: [
       {
         title: "Access the Calendar",
-        description: "Click 'Calendar' in the sidebar to view your content schedule in a visual format."
+        description: "Click 'Calendar' in the sidebar to view your content schedule in monthly, weekly, or daily view."
       },
       {
-        title: "Navigate between views",
-        description: "Switch between month, week, and day views using the view selector at the top."
-      },
-      {
-        title: "Create new posts",
-        description: "Click on any date to create a new post directly on that day."
-      },
-      {
-        title: "Drag and drop to reschedule",
-        description: "Click and drag any post to a different date to quickly reschedule content."
+        title: "Navigate between dates",
+        description: "Use the arrow buttons to move forward or backward in time. Click 'Today' to return to the current date."
       },
       {
         title: "View post details",
-        description: "Click on any scheduled post to view its full content, edit, or delete it."
+        description: "Click on any scheduled post to see its full content, platform, and status."
       },
       {
-        title: "Filter by campaign",
-        description: "Use filters to show only posts from specific campaigns for focused planning."
+        title: "Reschedule posts",
+        description: "Drag and drop posts to different dates, or click to edit and change the scheduled time."
+      },
+      {
+        title: "Filter by platform or campaign",
+        description: "Use the filter options to show only posts for specific platforms or campaigns."
       }
     ]
   },
   {
-    id: "campaign-creation",
+    id: "campaign-management",
     title: "Creating and Managing Campaigns",
     icon: Megaphone,
     difficulty: "Intermediate",
@@ -348,32 +376,32 @@ const howToGuides = [
     steps: [
       {
         title: "Navigate to Campaigns",
-        description: "Click 'Campaigns' in the sidebar to access your campaign management area."
+        description: "Click 'Campaigns' in the sidebar to view all your marketing campaigns."
       },
       {
         title: "Create a new campaign",
-        description: "Click 'Create Campaign' and enter a name, description, start date, and end date."
+        description: "Click 'New Campaign' and provide a name, description, start date, and end date."
       },
       {
-        title: "Add posts to your campaign",
-        description: "Either create new posts within the campaign or add existing posts from your library."
+        title: "Add posts to campaign",
+        description: "Select existing posts or create new ones to include in your campaign."
       },
       {
         title: "Set campaign goals",
-        description: "Define measurable objectives like reach, engagement, or conversions to track success."
+        description: "Define objectives like engagement targets, reach goals, or conversion metrics."
       },
       {
-        title: "Monitor performance",
-        description: "View campaign analytics to see how your posts are performing against your goals."
+        title: "Monitor progress",
+        description: "Track campaign performance from the campaign detail page with real-time analytics."
       },
       {
-        title: "Iterate and optimize",
-        description: "Use insights from analytics to adjust your content strategy for better results."
+        title: "Edit or archive",
+        description: "Update campaign details anytime or archive completed campaigns to keep your workspace organized."
       }
     ]
   },
   {
-    id: "account-settings",
+    id: "settings-configuration",
     title: "Configuring Account Settings",
     icon: Settings,
     difficulty: "Beginner",
@@ -381,32 +409,28 @@ const howToGuides = [
     steps: [
       {
         title: "Access Settings",
-        description: "Click 'Settings' in the bottom section of the sidebar navigation."
+        description: "Click 'Settings' in the sidebar to open your account configuration page."
       },
       {
         title: "Update profile information",
         description: "Edit your name, email, profile picture, and other personal details."
       },
       {
+        title: "Connect social accounts",
+        description: "Link your social media accounts to enable direct publishing from Drinknovate."
+      },
+      {
         title: "Configure notifications",
         description: "Choose which email and in-app notifications you want to receive."
       },
       {
-        title: "Manage privacy settings",
-        description: "Control data sharing preferences and visibility of your content."
-      },
-      {
-        title: "Customize appearance",
-        description: "Switch between light and dark themes, adjust display preferences."
-      },
-      {
-        title: "Connect social accounts",
-        description: "Link your social media accounts for direct posting capabilities."
+        title: "Manage team members",
+        description: "Invite collaborators and set their permission levels for your workspace."
       }
     ]
   },
   {
-    id: "best-practices",
+    id: "content-best-practices",
     title: "Content Best Practices",
     icon: Lightbulb,
     difficulty: "Advanced",
@@ -414,11 +438,11 @@ const howToGuides = [
     steps: [
       {
         title: "Understand your audience",
-        description: "Define your target demographic, their interests, pain points, and preferred platforms."
+        description: "Define your target demographic, their interests, pain points, and preferred content formats."
       },
       {
-        title: "Maintain consistent branding",
-        description: "Use consistent colors, tone, and messaging across all content for brand recognition."
+        title: "Maintain brand consistency",
+        description: "Use consistent colors, fonts, tone of voice, and messaging across all platforms."
       },
       {
         title: "Optimize posting times",
@@ -426,15 +450,15 @@ const howToGuides = [
       },
       {
         title: "Use platform-specific formats",
-        description: "Tailor content dimensions and style for each platform (square for Instagram, landscape for Twitter, etc.)."
+        description: "Adapt content for each platform's unique requirements and best practices."
       },
       {
-        title: "Include calls-to-action",
-        description: "Every post should have a clear CTA - whether it's to visit a link, comment, or share."
+        title: "Engage with your audience",
+        description: "Respond to comments, ask questions, and create interactive content to boost engagement."
       },
       {
         title: "Analyze and iterate",
-        description: "Regularly review performance metrics and adjust your strategy based on what works."
+        description: "Review performance metrics regularly and adjust your strategy based on what works."
       }
     ]
   }
@@ -443,27 +467,27 @@ const howToGuides = [
 const faqItems = [
   {
     question: "How do I generate content with AI?",
-    answer: "Navigate to the Generate page from the dashboard sidebar. Select your content type (post or campaign), provide details about your brand and target audience, and let our AI create engaging content for you. You can then review and edit the generated content before publishing.",
+    answer: "Navigate to the Generate page from the sidebar, fill in your brand details and content preferences, then click 'Generate'. The AI will create customized content based on your inputs. You can regenerate if you're not satisfied with the results.",
     category: "AI Generation"
   },
   {
     question: "How do I schedule posts on the calendar?",
-    answer: "Go to the Calendar page and click on any date to create a new post. You can also drag and drop existing posts to reschedule them. The calendar view helps you visualize your content strategy and maintain a consistent posting schedule.",
+    answer: "After creating content, go to the Calendar page. You can either drag and drop posts to specific dates or click on a date to create a new scheduled post. Set the time and platform, then save to schedule.",
     category: "Calendar"
   },
   {
     question: "What are campaigns and how do I use them?",
-    answer: "Campaigns are collections of related posts organized around a specific marketing goal or theme. Create a campaign from the Campaigns page, add multiple posts to it, and track their performance together. This helps you measure the effectiveness of your marketing initiatives.",
+    answer: "Campaigns are collections of related posts grouped together for a specific marketing initiative. Create a campaign to organize posts around a theme, product launch, or promotion. This helps you track performance and maintain consistency.",
     category: "Campaigns"
   },
   {
     question: "Can I edit AI-generated content?",
-    answer: "Yes! All AI-generated content is fully editable. After the AI creates your content, you can modify the text, adjust the tone, add or remove elements, and customize it to perfectly match your brand voice before publishing.",
+    answer: "Yes! All AI-generated content is fully editable. After generation, you can modify the text, change hashtags, adjust the tone, or completely rewrite sections. The content is yours to customize as needed.",
     category: "AI Generation"
   },
   {
     question: "How do I update my account settings?",
-    answer: "Click on Settings in the sidebar navigation. From there, you can update your profile information, change notification preferences, manage privacy settings, and customize the appearance of the platform.",
+    answer: "Click on 'Settings' in the sidebar navigation. From there, you can update your profile information, change your password, manage notification preferences, and configure connected social media accounts.",
     category: "Account"
   },
   {
@@ -473,12 +497,12 @@ const faqItems = [
   },
   {
     question: "How can I track campaign performance?",
-    answer: "Visit the Campaigns page to view detailed analytics for each campaign. You'll see metrics like reach, engagement, click-through rates, and conversions. Use these insights to optimize your future campaigns and improve your marketing strategy.",
+    answer: "Go to the Campaigns page and click on any campaign to view its detail page. You'll see metrics like total posts, scheduled vs. published content, engagement rates, and progress toward your campaign goals.",
     category: "Analytics"
   },
   {
     question: "Is my data secure?",
-    answer: "Yes, we take data security seriously. All data is encrypted in transit and at rest. We follow industry best practices for security and compliance. You can manage your privacy settings and data preferences in the Settings page under the Privacy tab.",
+    answer: "Yes, we take security seriously. All data is encrypted in transit and at rest. We use industry-standard security practices and never share your content or personal information with third parties without your consent.",
     category: "Security"
   },
   {
@@ -488,12 +512,12 @@ const faqItems = [
   },
   {
     question: "What image sizes should I use for each platform?",
-    answer: "Instagram: 1080x1080px (square) or 1080x1350px (portrait). Facebook: 1200x630px. Twitter: 1200x675px. LinkedIn: 1200x627px. TikTok: 1080x1920px. Our AI automatically suggests optimal sizes based on your selected platform.",
+    answer: "Recommended sizes: Instagram (1080x1080 for feed, 1080x1920 for stories), Facebook (1200x630), Twitter (1200x675), LinkedIn (1200x627), TikTok (1080x1920). Our AI automatically suggests optimal dimensions.",
     category: "Content"
   },
   {
     question: "Can I schedule posts for multiple platforms at once?",
-    answer: "Yes! When creating a post, you can select multiple platforms. The AI will optimize the content for each platform while maintaining your core message. Each platform version can be edited independently before scheduling.",
+    answer: "Yes! When creating content, you can select multiple platforms. The AI will optimize the content for each platform's requirements while maintaining your core message. You can then schedule all versions simultaneously.",
     category: "Scheduling"
   },
   {
@@ -773,24 +797,22 @@ export default function Help() {
                   </CardTitle>
                   <CardDescription>Quick answers to common questions</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Accordion type="single" collapsible className="space-y-2">
-                    {faqItems.slice(0, 5).map((item, index) => (
-                      <AccordionItem key={index} value={`faq-${index}`} className="border rounded-lg px-4">
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center gap-3 text-left">
-                            <span className="font-medium">{item.question}</span>
-                            <Badge variant="outline" className="ml-auto hidden sm:inline-flex">
-                              {item.category}
-                            </Badge>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground">
-                          {item.answer}
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
+                <CardContent className="space-y-3">
+                  {faqItems.slice(0, 5).map((item, index) => (
+                    <ExpandableItem
+                      key={index}
+                      trigger={
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium">{item.question}</span>
+                          <Badge variant="outline" className="ml-auto hidden sm:inline-flex">
+                            {item.category}
+                          </Badge>
+                        </div>
+                      }
+                    >
+                      {item.answer}
+                    </ExpandableItem>
+                  ))}
                   <Button 
                     variant="ghost" 
                     className="w-full mt-4"
@@ -947,24 +969,23 @@ export default function Help() {
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="flex-1">
-                        <Accordion type="single" collapsible className="space-y-2">
-                          {guide.steps.map((step, index) => (
-                            <AccordionItem key={index} value={`step-${index}`} className="border rounded-lg px-3">
-                              <AccordionTrigger className="hover:no-underline py-3">
-                                <div className="flex items-center gap-3 text-left">
-                                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
-                                    {index + 1}
-                                  </span>
-                                  <span className="font-medium text-sm">{step.title}</span>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent className="text-sm text-muted-foreground pl-9">
-                                {step.description}
-                              </AccordionContent>
-                            </AccordionItem>
-                          ))}
-                        </Accordion>
+                      <CardContent className="flex-1 space-y-2">
+                        {guide.steps.map((step, index) => (
+                          <ExpandableItem
+                            key={index}
+                            className="px-3"
+                            trigger={
+                              <div className="flex items-center gap-3">
+                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                                  {index + 1}
+                                </span>
+                                <span className="font-medium text-sm">{step.title}</span>
+                              </div>
+                            }
+                          >
+                            <div className="pl-9">{step.description}</div>
+                          </ExpandableItem>
+                        ))}
                       </CardContent>
                     </Card>
                   ))}
@@ -995,25 +1016,23 @@ export default function Help() {
                 </Card>
               ) : (
                 <Card>
-                  <CardContent className="pt-6">
-                    <Accordion type="single" collapsible className="space-y-3">
-                      {filteredFAQs.map((item, index) => (
-                        <AccordionItem key={index} value={`faq-full-${index}`} className="border rounded-lg px-4">
-                          <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-3 text-left flex-1">
-                              <HelpCircle className="w-5 h-5 text-primary flex-shrink-0" />
-                              <span className="font-medium">{item.question}</span>
-                              <Badge variant="outline" className="ml-auto hidden sm:inline-flex">
-                                {item.category}
-                              </Badge>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="text-muted-foreground pl-8">
-                            {item.answer}
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
+                  <CardContent className="pt-6 space-y-3">
+                    {filteredFAQs.map((item, index) => (
+                      <ExpandableItem
+                        key={index}
+                        trigger={
+                          <div className="flex items-center gap-3 flex-1">
+                            <HelpCircle className="w-5 h-5 text-primary flex-shrink-0" />
+                            <span className="font-medium">{item.question}</span>
+                            <Badge variant="outline" className="ml-auto hidden sm:inline-flex">
+                              {item.category}
+                            </Badge>
+                          </div>
+                        }
+                      >
+                        <div className="pl-8">{item.answer}</div>
+                      </ExpandableItem>
+                    ))}
                   </CardContent>
                 </Card>
               )}
