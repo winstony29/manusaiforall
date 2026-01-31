@@ -28,7 +28,7 @@ interface DashboardLayoutProps {
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", external: false },
   { href: "/dashboard/generate", icon: Sparkles, label: "Generate", external: false },
-  { href: "https://teacalendar-2agrwlqk.manus.space/", icon: Calendar, label: "Calendar", external: true },
+  { href: "/dashboard/calendar", icon: Calendar, label: "Calendar", external: false },
   { href: "/dashboard/campaigns", icon: Megaphone, label: "Campaigns", external: false },
 ];
 
