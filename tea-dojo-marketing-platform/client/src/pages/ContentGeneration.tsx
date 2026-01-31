@@ -626,39 +626,52 @@ CTA: ${generatedVideoScript.callToAction}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <h3 className="font-display font-semibold text-lg text-foreground mb-1">
+                        <div className="p-5 bg-secondary/50 rounded-xl">
+                          {/* Campaign Name - Large & Bold */}
+                          <h3 className="font-display font-bold text-2xl text-foreground mb-2">
                             {generatedTheme.name || "Generating..."}
                           </h3>
-                          <p className="text-[oklch(0.60_0.12_45)] font-medium mb-3">
+                          
+                          {/* Slogan - Prominent */}
+                          <p className="text-[oklch(0.60_0.12_45)] font-semibold text-lg mb-4">
                             {generatedTheme.slogan}
                           </p>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            {generatedTheme.description}
-                          </p>
+                          
+                          {/* Color Palette - Large & Prominent */}
                           {generatedTheme.colors.length > 0 && (
-                            <div className="flex gap-2 mb-4">
-                              {generatedTheme.colors.map((color, i) => (
-                                <div 
-                                  key={i}
-                                  className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                                  style={{ backgroundColor: color }}
-                                  title={color}
-                                />
-                              ))}
+                            <div className="mb-5">
+                              <div className="flex gap-3 mb-2">
+                                {generatedTheme.colors.map((color, i) => (
+                                  <div key={i} className="group relative">
+                                    <div 
+                                      className="w-14 h-14 rounded-xl border-3 border-white shadow-lg transition-transform hover:scale-110 cursor-pointer"
+                                      style={{ backgroundColor: color }}
+                                    />
+                                    <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background px-2 py-0.5 rounded whitespace-nowrap">
+                                      {color}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
+                          
+                          {/* Key Messages - Simplified as Tags */}
                           {generatedTheme.keyMessages.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Key Messages</p>
-                              <ul className="text-sm space-y-1">
-                                {generatedTheme.keyMessages.map((msg, i) => (
-                                  <li key={i} className="flex items-center gap-2">
-                                    <Check className="w-3 h-3 text-primary" />
-                                    {msg}
-                                  </li>
-                                ))}
-                              </ul>
+                            <div className="flex flex-wrap gap-2 mt-6">
+                              {generatedTheme.keyMessages.map((msg, i) => {
+                                // Extract just the key phrase (first 4-6 words)
+                                const shortMsg = msg.split(' ').slice(0, 5).join(' ');
+                                return (
+                                  <span 
+                                    key={i} 
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    {shortMsg.length < msg.length ? shortMsg + '...' : shortMsg}
+                                  </span>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -725,9 +738,20 @@ CTA: ${generatedVideoScript.callToAction}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
-                          <p className="text-sm font-medium text-primary">Theme: {generatedTheme.name}</p>
-                          <p className="text-xs text-muted-foreground">{generatedTheme.slogan}</p>
+                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
+                          <p className="font-semibold text-primary text-lg">{generatedTheme.name}</p>
+                          <p className="text-sm text-muted-foreground mb-3">{generatedTheme.slogan}</p>
+                          {generatedTheme.colors.length > 0 && (
+                            <div className="flex gap-2">
+                              {generatedTheme.colors.map((color, i) => (
+                                <div 
+                                  key={i}
+                                  className="w-10 h-10 rounded-lg shadow-md"
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         {!contentGenerated ? (
