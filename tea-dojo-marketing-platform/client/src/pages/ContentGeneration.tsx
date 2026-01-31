@@ -42,11 +42,13 @@ import {
   Upload,
   X,
   File,
-  AlertCircle
+  AlertCircle,
+  Pencil
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { toast } from "sonner";
+// Using native HTML color input instead of react-colorful for better compatibility
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -142,6 +144,12 @@ export default function ContentGeneration() {
   const [isDragging, setIsDragging] = useState(false);
   const [refinementPrompt, setRefinementPrompt] = useState("");
   const [error, setError] = useState<string | null>(null);
+  
+  // Color picker state
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [editingColorIndex, setEditingColorIndex] = useState<number | null>(null);
+  const [editingPaletteIndex, setEditingPaletteIndex] = useState<number | null>(null);
+  const [tempColor, setTempColor] = useState("#000000");
 
   // Generated content state
   const [generatedTheme, setGeneratedTheme] = useState<Theme>(emptyTheme);
@@ -360,6 +368,46 @@ export default function ContentGeneration() {
       });
       toast.success(`Selected ${generatedTheme.paletteNames?.[index] || `Palette ${index + 1}`}`);
     }
+  };
+
+  // Open color picker for a specific color
+  const openColorPicker = (paletteIndex: number, colorIndex: number, currentColor: string) => {
+    setEditingPaletteIndex(paletteIndex);
+    setEditingColorIndex(colorIndex);
+    setTempColor(currentColor);
+    setColorPickerOpen(true);
+  };
+
+  // Apply the edited color
+  const applyColorChange = () => {
+    if (editingPaletteIndex === null || editingColorIndex === null) return;
+    
+    const newColorPalettes = [...generatedTheme.colorPalettes];
+    newColorPalettes[editingPaletteIndex] = [...newColorPalettes[editingPaletteIndex]];
+    newColorPalettes[editingPaletteIndex][editingColorIndex] = tempColor;
+    
+    // Also update the active colors if this is the selected palette
+    const newColors = editingPaletteIndex === generatedTheme.selectedPaletteIndex
+      ? newColorPalettes[editingPaletteIndex]
+      : generatedTheme.colors;
+    
+    setGeneratedTheme({
+      ...generatedTheme,
+      colorPalettes: newColorPalettes,
+      colors: newColors,
+    });
+    
+    setColorPickerOpen(false);
+    setEditingColorIndex(null);
+    setEditingPaletteIndex(null);
+    toast.success("Color updated!");
+  };
+
+  // Cancel color editing
+  const cancelColorEdit = () => {
+    setColorPickerOpen(false);
+    setEditingColorIndex(null);
+    setEditingPaletteIndex(null);
   };
 
   // Regenerate only the color palettes
@@ -814,9 +862,18 @@ CTA: ${generatedVideoScript.callToAction}
                                       {palette.map((color, colorIndex) => (
                                         <div key={colorIndex} className="group relative">
                                           <div 
-                                            className="w-10 h-10 rounded-lg border-2 border-white shadow-md transition-transform hover:scale-110"
+                                            className="w-10 h-10 rounded-lg border-2 border-white shadow-md transition-transform hover:scale-110 cursor-pointer"
                                             style={{ backgroundColor: color }}
-                                          />
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openColorPicker(paletteIndex, colorIndex, color);
+                                            }}
+                                          >
+                                            {/* Edit icon overlay on hover */}
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <Pencil className="w-4 h-4 text-white" />
+                                            </div>
+                                          </div>
                                           <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background px-1.5 py-0.5 rounded whitespace-nowrap z-10">
                                             {color}
                                           </span>
@@ -1302,6 +1359,176 @@ CTA: ${generatedVideoScript.callToAction}
           </div>
         </div>
       </main>
+
+      {/* Color Picker Modal */}
+      <AnimatePresence>
+        {colorPickerOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={cancelColorEdit}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-background rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display font-semibold text-lg">Edit Color</h3>
+                <Button variant="ghost" size="sm" onClick={cancelColorEdit}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {/* Color Picker & Preview */}
+              <div className="flex flex-col items-center gap-4 mb-4">
+                {/* Color Preview with Native Picker */}
+                <div className="relative group">
+                  <div 
+                    className="w-32 h-32 rounded-2xl shadow-lg border-4 border-white"
+                    style={{ backgroundColor: tempColor }}
+                  />
+                  <input
+                    type="color"
+                    value={tempColor}
+                    onChange={(e) => setTempColor(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-black/50 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to pick
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Hex Input */}
+                <div className="w-full space-y-2">
+                  <Label className="text-xs text-muted-foreground">Hex Code</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground font-mono">#</span>
+                    <Input
+                      value={tempColor.replace('#', '').toUpperCase()}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9A-Fa-f]/g, '').substring(0, 6);
+                        if (val.length === 6) {
+                          setTempColor('#' + val);
+                        } else if (val.length < 6) {
+                          setTempColor('#' + val.padEnd(6, '0'));
+                        }
+                      }}
+                      className="flex-1 font-mono text-sm uppercase bg-secondary/30"
+                      maxLength={6}
+                      placeholder="000000"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* RGB Sliders */}
+              <div className="space-y-3 mb-4">
+                {(() => {
+                  const hex = tempColor.replace('#', '');
+                  const r = parseInt(hex.substring(0, 2), 16) || 0;
+                  const g = parseInt(hex.substring(2, 4), 16) || 0;
+                  const b = parseInt(hex.substring(4, 6), 16) || 0;
+                  
+                  const updateRGB = (newR: number, newG: number, newB: number) => {
+                    const toHex = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
+                    setTempColor('#' + toHex(newR) + toHex(newG) + toHex(newB));
+                  };
+                  
+                  return (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 text-center text-xs font-medium text-red-600">R</div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="255"
+                          value={r}
+                          onChange={(e) => updateRGB(parseInt(e.target.value), g, b)}
+                          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
+                          style={{ background: `linear-gradient(to right, rgb(0,${g},${b}), rgb(255,${g},${b}))` }}
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="255"
+                          value={r}
+                          onChange={(e) => updateRGB(parseInt(e.target.value) || 0, g, b)}
+                          className="w-16 text-center font-mono text-sm"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 text-center text-xs font-medium text-green-600">G</div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="255"
+                          value={g}
+                          onChange={(e) => updateRGB(r, parseInt(e.target.value), b)}
+                          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
+                          style={{ background: `linear-gradient(to right, rgb(${r},0,${b}), rgb(${r},255,${b}))` }}
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="255"
+                          value={g}
+                          onChange={(e) => updateRGB(r, parseInt(e.target.value) || 0, b)}
+                          className="w-16 text-center font-mono text-sm"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 text-center text-xs font-medium text-blue-600">B</div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="255"
+                          value={b}
+                          onChange={(e) => updateRGB(r, g, parseInt(e.target.value))}
+                          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
+                          style={{ background: `linear-gradient(to right, rgb(${r},${g},0), rgb(${r},${g},255))` }}
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="255"
+                          value={b}
+                          onChange={(e) => updateRGB(r, g, parseInt(e.target.value) || 0)}
+                          className="w-16 text-center font-mono text-sm"
+                        />
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={cancelColorEdit}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                  onClick={applyColorChange}
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Apply
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
