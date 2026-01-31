@@ -46,6 +46,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -116,6 +118,8 @@ export default function ContentGeneration() {
   const [activeTab, setActiveTab] = useState("social");
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string, size: number}[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [generatedVisuals, setGeneratedVisuals] = useState<string[]>([]);
+  const [isGeneratingVisuals, setIsGeneratingVisuals] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -196,6 +200,33 @@ export default function ContentGeneration() {
     setContentGenerated(false);
     setCampaignGoal("");
     setTargetAudience("");
+    setGeneratedVisuals([]);
+  };
+
+  const handleGenerateVisuals = async () => {
+    setIsGeneratingVisuals(true);
+    try {
+      // Generate 3 visuals for different platforms
+      const platforms: ("instagram" | "facebook" | "tiktok")[] = ["instagram", "facebook", "tiktok"];
+      const visualPromises = platforms.map(platform => 
+        trpc.content.generateVisuals.mutate({
+          theme: sampleTheme.name,
+          platform,
+          caption: sampleContent[platform].caption,
+          colors: sampleTheme.colors,
+        })
+      );
+      
+      const results = await Promise.all(visualPromises);
+      const imageUrls = results.map(r => r.imageUrl).filter(Boolean) as string[];
+      setGeneratedVisuals(imageUrls);
+      toast.success("Visuals generated successfully!");
+    } catch (error) {
+      console.error("Error generating visuals:", error);
+      toast.error("Failed to generate visuals. Please try again.");
+    } finally {
+      setIsGeneratingVisuals(false);
+    }
   };
 
   return (
@@ -791,20 +822,68 @@ export default function ContentGeneration() {
                           <p className="text-sm text-muted-foreground">
                             AI-generated visuals based on your campaign theme
                           </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {[1, 2, 3, 4, 5, 6].map((i) => (
-                              <div key={i} className="aspect-square rounded-lg bg-gradient-to-br from-[#C41E3A]/20 to-[#FFD700]/20 border border-border flex items-center justify-center group cursor-pointer hover:border-primary transition-colors">
-                                <div className="text-center p-4">
-                                  <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                                  <p className="text-xs text-muted-foreground">Visual {i}</p>
-                                </div>
+                          {generatedVisuals.length > 0 ? (
+                            <>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {generatedVisuals.map((imageUrl, i) => (
+                                  <div key={i} className="aspect-square rounded-lg border border-border overflow-hidden group cursor-pointer hover:border-primary transition-colors">
+                                    <img 
+                                      src={imageUrl} 
+                                      alt={`Generated visual ${i + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                          <Button className="w-full" variant="outline">
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Generate More Visuals
-                          </Button>
+                              <Button 
+                                className="w-full" 
+                                variant="outline"
+                                onClick={handleGenerateVisuals}
+                                disabled={isGeneratingVisuals}
+                              >
+                                {isGeneratingVisuals ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Generating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-4 h-4 mr-2" />
+                                    Generate More Visuals
+                                  </>
+                                )}
+                              </Button>
+                            </>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                                <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                              </div>
+                              <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+                                Ready to Generate Visuals
+                              </h3>
+                              <p className="text-muted-foreground max-w-sm mb-4">
+                                Click below to create AI-powered visuals for your campaign
+                              </p>
+                              <Button 
+                                onClick={handleGenerateVisuals}
+                                disabled={isGeneratingVisuals}
+                                className="bg-primary hover:bg-primary/90"
+                              >
+                                {isGeneratingVisuals ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Generating Visuals...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-4 h-4 mr-2" />
+                                    Generate Visuals
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center py-16 text-center">

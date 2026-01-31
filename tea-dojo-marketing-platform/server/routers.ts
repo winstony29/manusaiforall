@@ -15,6 +15,7 @@ import {
   seedDefaultCalendarEvents,
   seedDefaultWeeklySchedules,
 } from "./db";
+import { generateImage } from "./_core/imageGeneration";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -73,6 +74,44 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await deleteCalendarEvent(input.id);
         return { success: true };
+      }),
+  }),
+
+  // Content Generation
+  content: router({
+    generateVisuals: publicProcedure
+      .input(z.object({
+        theme: z.string(),
+        platform: z.enum(["instagram", "facebook", "tiktok"]),
+        caption: z.string(),
+        colors: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const colorDescription = input.colors && input.colors.length > 0
+          ? ` Use these brand colors: ${input.colors.join(", ")}.`
+          : "";
+        
+        const prompt = `Create a vibrant, eye-catching social media post for ${input.platform} about "${input.theme}". The post should include: ${input.caption}.${colorDescription} Make it visually appealing with modern design, suitable for a tea/bubble tea brand. Include decorative elements like tea leaves, bubbles, or cups. Professional marketing quality.`;
+        
+        const result = await generateImage({ prompt });
+        return { imageUrl: result.url };
+      }),
+    generateMerchandiseDesign: publicProcedure
+      .input(z.object({
+        type: z.string(),
+        theme: z.string(),
+        designPrompt: z.string(),
+        colors: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const colorDescription = input.colors && input.colors.length > 0
+          ? ` Use these brand colors: ${input.colors.join(", ")}.`
+          : "";
+        
+        const prompt = `Design a ${input.type} for a bubble tea brand with the theme "${input.theme}". ${input.designPrompt}${colorDescription} Professional product mockup, high quality, realistic rendering.`;
+        
+        const result = await generateImage({ prompt });
+        return { imageUrl: result.url };
       }),
   }),
 
