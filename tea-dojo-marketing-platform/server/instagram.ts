@@ -103,22 +103,29 @@ export async function exchangeCodeForToken(code: string): Promise<InstagramToken
   formData.append('redirect_uri', redirectUri);
   formData.append('code', code);
   
-  const response = await axios.post<{ data: InstagramTokenResponse[] }>(
-    'https://api.instagram.com/oauth/access_token',
-    formData.toString(),
-    {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+  try {
+    const response = await axios.post<InstagramTokenResponse>(
+      'https://api.instagram.com/oauth/access_token',
+      formData.toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+    
+    // Instagram API returns a flat object with access_token and user_id
+    if (response.data.access_token && response.data.user_id) {
+      return response.data;
     }
-  );
-  
-  // The response contains a data array with the token info
-  if (response.data.data && response.data.data.length > 0) {
-    return response.data.data[0];
+    
+    throw new Error('Invalid token response from Instagram');
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data?.error_message) {
+      throw new Error(`Instagram OAuth error: ${error.response.data.error_message}`);
+    }
+    throw error;
   }
-  
-  throw new Error('Invalid token response from Instagram');
 }
 
 /**
@@ -131,18 +138,25 @@ export async function exchangeForLongLivedToken(shortLivedToken: string): Promis
     throw new Error('Instagram App Secret not configured');
   }
   
-  const response = await axios.get<InstagramLongLivedTokenResponse>(
-    'https://graph.instagram.com/access_token',
-    {
-      params: {
-        grant_type: 'ig_exchange_token',
-        client_secret: appSecret,
-        access_token: shortLivedToken,
-      },
+  try {
+    const response = await axios.get<InstagramLongLivedTokenResponse>(
+      'https://graph.instagram.com/access_token',
+      {
+        params: {
+          grant_type: 'ig_exchange_token',
+          client_secret: appSecret,
+          access_token: shortLivedToken,
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data?.error?.message) {
+      throw new Error(`Failed to get long-lived token: ${error.response.data.error.message}`);
     }
-  );
-  
-  return response.data;
+    throw error;
+  }
 }
 
 /**
