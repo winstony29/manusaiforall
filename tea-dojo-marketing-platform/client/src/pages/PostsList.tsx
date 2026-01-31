@@ -119,7 +119,7 @@ export default function PostsList() {
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/generate">
+            <Link href="/dashboard/generate">
               <Button variant="ghost" size="sm" className="gap-2">
                 <ArrowLeft className="w-4 h-4" />
                 Back
@@ -132,7 +132,7 @@ export default function PostsList() {
               <span className="font-display font-semibold text-lg">All Posts</span>
             </div>
           </div>
-          <Link href="/create-post">
+          <Link href="/dashboard/create-post">
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
               New Post
@@ -178,7 +178,7 @@ export default function PostsList() {
                 <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No posts yet</h3>
                 <p className="text-muted-foreground mb-6">Create your first post to get started</p>
-                <Link href="/create-post">
+                <Link href="/dashboard/create-post">
                   <Button className="gap-2"><Plus className="w-4 h-4" />Create Post</Button>
                 </Link>
               </CardContent>

@@ -21,20 +21,15 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/dashboard/generate"} component={ContentGeneration} />
       <Route path={"/dashboard/calendar"} component={CalendarPage} />
-      <Route path={"/dashboard/campaigns"} component={Campaigns} />
       
-      {/* New Generate Flow */}
-      <Route path={"/generate"} component={GenerateLanding} />
-      <Route path={"/create-post"} component={CreatePost} />
-      <Route path={"/create-campaign"} component={CreateCampaign} />
-      <Route path={"/campaigns"} component={CampaignsList} />
-      <Route path={"/campaigns/:id"} component={CampaignsList} />
-      <Route path={"/posts"} component={PostsList} />
-      
-      {/* Legacy route for backward compatibility */}
-      <Route path={"/generate-content"} component={ContentGeneration} />
+      {/* Content Studio Flow */}
+      <Route path={"/dashboard/generate"} component={GenerateLanding} />
+      <Route path={"/dashboard/create-post"} component={CreatePost} />
+      <Route path={"/dashboard/create-campaign"} component={CreateCampaign} />
+      <Route path={"/dashboard/campaigns"} component={CampaignsList} />
+      <Route path={"/dashboard/campaigns/:id"} component={CampaignsList} />
+      <Route path={"/dashboard/posts"} component={PostsList} />
       
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

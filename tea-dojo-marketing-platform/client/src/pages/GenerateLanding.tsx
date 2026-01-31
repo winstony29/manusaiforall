@@ -57,7 +57,7 @@ export default function GenerateLanding() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <Link href="/create-post">
+            <Link href="/dashboard/create-post">
               <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/50 h-full">
                 <CardContent className="p-8">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -98,7 +98,7 @@ export default function GenerateLanding() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Link href="/create-campaign">
+            <Link href="/dashboard/create-campaign">
               <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/50 h-full">
                 <CardContent className="p-8">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -147,13 +147,13 @@ export default function GenerateLanding() {
         >
           <p className="text-muted-foreground mb-4">Or manage your existing content</p>
           <div className="flex items-center justify-center gap-4">
-            <Link href="/campaigns">
+            <Link href="/dashboard/campaigns">
               <Button variant="outline" className="gap-2">
                 <Calendar className="w-4 h-4" />
                 View Campaigns
               </Button>
             </Link>
-            <Link href="/posts">
+            <Link href="/dashboard/posts">
               <Button variant="outline" className="gap-2">
                 <FileText className="w-4 h-4" />
                 View All Posts

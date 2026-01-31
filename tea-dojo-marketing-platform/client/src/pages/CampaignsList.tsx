@@ -88,7 +88,7 @@ export default function CampaignsList() {
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/generate">
+            <Link href="/dashboard/generate">
               <Button variant="ghost" size="sm" className="gap-2">
                 <ArrowLeft className="w-4 h-4" />
                 Back
@@ -101,7 +101,7 @@ export default function CampaignsList() {
               <span className="font-display font-semibold text-lg">Campaigns</span>
             </div>
           </div>
-          <Link href="/create-campaign">
+          <Link href="/dashboard/create-campaign">
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
               New Campaign
@@ -155,7 +155,7 @@ export default function CampaignsList() {
                     ? 'No campaigns match your filters'
                     : 'Create your first campaign to get started'}
                 </p>
-                <Link href="/create-campaign">
+                <Link href="/dashboard/create-campaign">
                   <Button className="gap-2">
                     <Plus className="w-4 h-4" />
                     Create Campaign
