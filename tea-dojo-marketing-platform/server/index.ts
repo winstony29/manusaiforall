@@ -19,6 +19,8 @@ interface Theme {
   slogan: string;
   description: string;
   colors: string[];
+  colorPalettes: string[][]; // Multiple palette options
+  selectedPaletteIndex: number;
   keyMessages: string[];
 }
 
@@ -72,7 +74,11 @@ Generate a JSON response with the following structure:
   "name": "Creative campaign name (e.g., 'Golden Fortune CNY 2026' or 'Summer Splash Festival')",
   "slogan": "Catchy slogan with 1-2 emojis",
   "description": "2-3 sentence description of the campaign theme, its visual style, and key messaging approach",
-  "colors": ["#hexcode1", "#hexcode2", "#hexcode3"] (3 hex color codes that match the theme),
+  "colorPalettes": [
+    ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"] (Option 1: 6 harmonious colors),
+    ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"] (Option 2: 6 alternative colors),
+    ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"] (Option 3: 6 different variation)
+  ],
   "keyMessages": ["message1", "message2", "message3", "message4"] (4 key marketing messages)
 }
 
@@ -80,6 +86,11 @@ Important:
 - Make the theme specific to the campaign goal (e.g., if it's CNY, use red/gold colors and prosperity themes)
 - If it's Christmas, use festive colors and holiday themes
 - If it's summer, use bright refreshing colors
+- Each color palette should have 6 colors: primary, secondary, accent, background, text highlight, and complementary
+- The 3 palette options should be distinct but all appropriate for the theme:
+  * Option 1: Classic/Traditional interpretation
+  * Option 2: Modern/Vibrant interpretation  
+  * Option 3: Soft/Pastel interpretation
 - Keep it relevant to a bubble tea brand in Singapore
 - The slogan should be memorable and include relevant emojis
 
@@ -106,7 +117,18 @@ Respond ONLY with the JSON object, no additional text.`;
     responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     
     // Parse the JSON response
-    const theme: Theme = JSON.parse(responseText);
+    const parsedTheme = JSON.parse(responseText);
+    
+    // Ensure we have the new structure with colorPalettes
+    const theme: Theme = {
+      name: parsedTheme.name,
+      slogan: parsedTheme.slogan,
+      description: parsedTheme.description,
+      colorPalettes: parsedTheme.colorPalettes || [parsedTheme.colors || []],
+      colors: parsedTheme.colorPalettes?.[0] || parsedTheme.colors || [],
+      selectedPaletteIndex: 0,
+      keyMessages: parsedTheme.keyMessages
+    };
     
     res.json({ success: true, theme });
   } catch (error) {
@@ -305,7 +327,11 @@ Generate an improved/refined theme based on the feedback. Return a JSON object w
   "name": "Campaign name",
   "slogan": "Catchy slogan with emojis",
   "description": "2-3 sentence description",
-  "colors": ["#hex1", "#hex2", "#hex3"],
+  "colorPalettes": [
+    ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"] (Option 1: 6 colors),
+    ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"] (Option 2: 6 colors),
+    ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"] (Option 3: 6 colors)
+  ],
   "keyMessages": ["msg1", "msg2", "msg3", "msg4"]
 }
 
@@ -328,7 +354,18 @@ Respond ONLY with the JSON object.`;
 
     let regenResponseText = completion.choices[0]?.message?.content || '{}';
     regenResponseText = regenResponseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const theme = JSON.parse(regenResponseText);
+    const parsedTheme = JSON.parse(regenResponseText);
+    
+    // Ensure we have the new structure with colorPalettes
+    const theme: Theme = {
+      name: parsedTheme.name,
+      slogan: parsedTheme.slogan,
+      description: parsedTheme.description,
+      colorPalettes: parsedTheme.colorPalettes || [parsedTheme.colors || []],
+      colors: parsedTheme.colorPalettes?.[0] || parsedTheme.colors || [],
+      selectedPaletteIndex: 0,
+      keyMessages: parsedTheme.keyMessages
+    };
 
     res.json({ success: true, theme });
   } catch (error) {
@@ -336,6 +373,76 @@ Respond ONLY with the JSON object.`;
     res.status(500).json({ 
       success: false, 
       error: 'Failed to regenerate theme',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Regenerate only color palettes (independent of theme)
+app.post('/api/regenerate-palette', async (req, res) => {
+  try {
+    const { themeName, themeDescription, campaignGoal } = req.body;
+
+    const prompt = `Generate 3 different color palette options for a bubble tea marketing campaign.
+
+Theme: ${themeName}
+Description: ${themeDescription}
+Campaign Goal: ${campaignGoal}
+
+Generate a JSON response with 3 distinct color palette options, each with 6 colors:
+{
+  "colorPalettes": [
+    ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
+    ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
+    ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"]
+  ],
+  "paletteNames": ["Classic", "Modern", "Soft"]
+}
+
+Each palette should have:
+- Primary color (brand/main)
+- Secondary color (supporting)
+- Accent color (highlights)
+- Background color (light/neutral)
+- Text highlight color
+- Complementary color
+
+Make each option distinctly different:
+- Option 1: Classic/Traditional interpretation
+- Option 2: Modern/Vibrant interpretation
+- Option 3: Soft/Pastel interpretation
+
+Respond ONLY with the JSON object.`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a color palette expert. Always respond with valid JSON only.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.9,
+    });
+
+    let paletteResponseText = completion.choices[0]?.message?.content || '{}';
+    paletteResponseText = paletteResponseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const result = JSON.parse(paletteResponseText);
+
+    res.json({ 
+      success: true, 
+      colorPalettes: result.colorPalettes,
+      paletteNames: result.paletteNames || ['Classic', 'Modern', 'Soft']
+    });
+  } catch (error) {
+    console.error('Error regenerating palette:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to regenerate palette',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }

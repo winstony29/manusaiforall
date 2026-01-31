@@ -68,6 +68,9 @@ interface Theme {
   slogan: string;
   description: string;
   colors: string[];
+  colorPalettes: string[][];
+  selectedPaletteIndex: number;
+  paletteNames?: string[];
   keyMessages: string[];
 }
 
@@ -104,6 +107,9 @@ const emptyTheme: Theme = {
   slogan: "",
   description: "",
   colors: [],
+  colorPalettes: [],
+  selectedPaletteIndex: 0,
+  paletteNames: ['Classic', 'Modern', 'Soft'],
   keyMessages: [],
 };
 
@@ -198,7 +204,15 @@ export default function ContentGeneration() {
       const data = await response.json();
 
       if (data.success && data.theme) {
-        setGeneratedTheme(data.theme);
+        // Ensure theme has proper structure with colorPalettes
+        const theme = {
+          ...data.theme,
+          colorPalettes: data.theme.colorPalettes || [data.theme.colors || []],
+          colors: data.theme.colorPalettes?.[0] || data.theme.colors || [],
+          selectedPaletteIndex: 0,
+          paletteNames: data.theme.paletteNames || ['Classic', 'Modern', 'Soft'],
+        };
+        setGeneratedTheme(theme);
         setCurrentStep(2);
         toast.success("Theme generated successfully!");
       } else {
@@ -313,7 +327,15 @@ export default function ContentGeneration() {
       const data = await response.json();
 
       if (data.success && data.theme) {
-        setGeneratedTheme(data.theme);
+        // Ensure theme has proper structure with colorPalettes
+        const theme = {
+          ...data.theme,
+          colorPalettes: data.theme.colorPalettes || [data.theme.colors || []],
+          colors: data.theme.colorPalettes?.[0] || data.theme.colors || [],
+          selectedPaletteIndex: 0,
+          paletteNames: data.theme.paletteNames || ['Classic', 'Modern', 'Soft'],
+        };
+        setGeneratedTheme(theme);
         setRefinementPrompt("");
         toast.success("Theme regenerated successfully!");
       } else {
@@ -321,6 +343,59 @@ export default function ContentGeneration() {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate theme';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Select a different color palette option
+  const selectPalette = (index: number) => {
+    if (generatedTheme.colorPalettes && generatedTheme.colorPalettes[index]) {
+      setGeneratedTheme({
+        ...generatedTheme,
+        colors: generatedTheme.colorPalettes[index],
+        selectedPaletteIndex: index,
+      });
+      toast.success(`Selected ${generatedTheme.paletteNames?.[index] || `Palette ${index + 1}`}`);
+    }
+  };
+
+  // Regenerate only the color palettes
+  const handleRegeneratePalette = async () => {
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/regenerate-palette', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          themeName: generatedTheme.name,
+          themeDescription: generatedTheme.description,
+          campaignGoal,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.colorPalettes) {
+        setGeneratedTheme({
+          ...generatedTheme,
+          colorPalettes: data.colorPalettes,
+          colors: data.colorPalettes[0],
+          selectedPaletteIndex: 0,
+          paletteNames: data.paletteNames || ['Classic', 'Modern', 'Soft'],
+        });
+        toast.success("New color palettes generated!");
+      } else {
+        throw new Error(data.error || 'Failed to regenerate palettes');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate palettes';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -670,19 +745,59 @@ CTA: ${generatedVideoScript.callToAction}
                             {generatedTheme.slogan}
                           </p>
                           
-                          {/* Color Palette - Large & Prominent */}
-                          {generatedTheme.colors.length > 0 && (
-                            <div className="mb-5">
-                              <div className="flex gap-3 mb-2">
-                                {generatedTheme.colors.map((color, i) => (
-                                  <div key={i} className="group relative">
-                                    <div 
-                                      className="w-14 h-14 rounded-xl border-3 border-white shadow-lg transition-transform hover:scale-110 cursor-pointer"
-                                      style={{ backgroundColor: color }}
-                                    />
-                                    <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background px-2 py-0.5 rounded whitespace-nowrap">
-                                      {color}
-                                    </span>
+                          {/* Color Palette Options */}
+                          {generatedTheme.colorPalettes && generatedTheme.colorPalettes.length > 0 && (
+                            <div className="mb-5 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium text-muted-foreground">Color Palette Options</Label>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={handleRegeneratePalette}
+                                  disabled={isGenerating}
+                                  className="text-xs h-7 px-2"
+                                >
+                                  <RefreshCw className={`w-3 h-3 mr-1 ${isGenerating ? "animate-spin" : ""}`} />
+                                  New Palettes
+                                </Button>
+                              </div>
+                              
+                              {/* Palette Options */}
+                              <div className="space-y-3">
+                                {generatedTheme.colorPalettes.map((palette, paletteIndex) => (
+                                  <div 
+                                    key={paletteIndex}
+                                    onClick={() => selectPalette(paletteIndex)}
+                                    className={`p-3 rounded-xl cursor-pointer transition-all ${
+                                      generatedTheme.selectedPaletteIndex === paletteIndex
+                                        ? 'bg-primary/10 border-2 border-primary shadow-md'
+                                        : 'bg-background/50 border-2 border-transparent hover:border-primary/30 hover:bg-primary/5'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-xs font-medium text-muted-foreground">
+                                        {generatedTheme.paletteNames?.[paletteIndex] || `Option ${paletteIndex + 1}`}
+                                      </span>
+                                      {generatedTheme.selectedPaletteIndex === paletteIndex && (
+                                        <Badge variant="default" className="text-xs h-5">
+                                          <Check className="w-3 h-3 mr-1" />
+                                          Selected
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      {palette.map((color, colorIndex) => (
+                                        <div key={colorIndex} className="group relative">
+                                          <div 
+                                            className="w-10 h-10 rounded-lg border-2 border-white shadow-md transition-transform hover:scale-110"
+                                            style={{ backgroundColor: color }}
+                                          />
+                                          <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background px-1.5 py-0.5 rounded whitespace-nowrap z-10">
+                                            {color}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 ))}
                               </div>
