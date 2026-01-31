@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
+import { trpc } from "@/lib/trpc";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -273,23 +274,20 @@ export default function CreateCampaign() {
     return `Theme: "${theme.name}" - ${theme.slogan}. ${theme.description}. Key messages: ${theme.keyMessages.join(', ')}. Color palette (${selectedPalette.name}): ${colorString}. Target audience: ${targetAudience}. Tone: ${toneOfVoice}.`;
   };
 
+  // tRPC mutations
+  const generateThemeMutation = trpc.content.generateTheme.useMutation();
+  const generateCampaignContentMutation = trpc.content.generateCampaignContent.useMutation();
+
   // Theme generation
   const handleGenerateTheme = async () => {
     setIsGeneratingTheme(true);
     try {
-      const response = await fetch('/api/generate-theme', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          campaignGoal,
-          targetAudience,
-          toneOfVoice
-        })
+      const data = await generateThemeMutation.mutateAsync({
+        campaignGoal,
+        targetAudience,
+        toneOfVoice
       });
       
-      if (!response.ok) throw new Error('Failed to generate theme');
-      
-      const data = await response.json();
       setTheme(data.theme);
       toast.success('Theme generated successfully!');
     } catch (error) {
@@ -320,72 +318,35 @@ export default function CreateCampaign() {
 
   // Content generation with theme-based prompts
   const handleGenerateContent = async () => {
+    if (!theme) {
+      toast.error('Please generate a theme first');
+      return;
+    }
+    
     setIsGeneratingContent(true);
-    const themePrompt = buildThemePrompt();
     
     try {
-      const response = await fetch('/api/generate-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          theme,
-          themePrompt,
-          formats: selectedFormats,
-          merchandise: selectedMerch,
-          generateCaptions,
-          campaignGoal,
-          targetAudience
-        })
+      const data = await generateCampaignContentMutation.mutateAsync({
+        theme: {
+          name: theme.name,
+          slogan: theme.slogan,
+          description: theme.description,
+          keyMessages: theme.keyMessages,
+          colorPalettes: theme.colorPalettes,
+          selectedPaletteIndex: theme.selectedPaletteIndex
+        },
+        formats: selectedFormats,
+        merchandise: selectedMerch,
+        generateCaptions,
+        campaignGoal,
+        targetAudience
       });
       
-      if (!response.ok) throw new Error('Failed to generate content');
-      
-      const data = await response.json();
       setGeneratedContent(data);
       toast.success('Content generated successfully!');
     } catch (error) {
       console.error('Error generating content:', error);
-      // Generate mock content for demo with theme-based prompts
-      const selectedPalette = theme?.colorPalettes[theme.selectedPaletteIndex];
-      const mockContent = {
-        socialPosts: selectedFormats.map(formatId => {
-          const format = formatOptions.find(f => f.id === formatId);
-          return {
-            platform: format?.platform,
-            format: format?.label,
-            contentType: format?.contentType,
-            caption: `✨ ${theme?.slogan || 'Amazing campaign'} ✨\n\n${campaignGoal}\n\nPerfect for ${targetAudience}! 🎉`,
-            hashtags: '#teadojo #bubbletea #campaign #marketing',
-            imagePrompt: format?.contentType === 'image' 
-              ? `Create a ${format.aspectRatio} marketing image for "${theme?.name}". Theme: ${theme?.description}. Use colors: ${selectedPalette?.colors.join(', ')}. Style: ${toneOfVoice}, modern, eye-catching. Include bubble tea drinks prominently.`
-              : undefined,
-            videoPrompt: format?.contentType === 'video'
-              ? `Create a ${format.aspectRatio} marketing video for "${theme?.name}". Theme: ${theme?.description}. Color scheme: ${selectedPalette?.colors.join(', ')}. Tone: ${toneOfVoice}. Show bubble tea preparation, happy customers, and brand messaging.`
-              : undefined
-          };
-        }),
-        videoScript: selectedFormats.some(f => formatOptions.find(fo => fo.id === f)?.contentType === 'video') ? {
-          scenes: [
-            { sceneNumber: 1, duration: '0-3s', visualDescription: `Opening shot with ${theme?.name} branding, colors: ${selectedPalette?.colors[0]}` },
-            { sceneNumber: 2, duration: '3-8s', visualDescription: `Showcase bubble tea preparation with ${toneOfVoice} energy` },
-            { sceneNumber: 3, duration: '8-12s', visualDescription: `Customer enjoying drinks, ${theme?.slogan} text overlay` },
-            { sceneNumber: 4, duration: '12-15s', visualDescription: `Call to action with brand logo and campaign colors` }
-          ]
-        } : null,
-        merchandiseDesigns: selectedMerch.map(merchId => {
-          const merch = merchOptions.find(m => m.id === merchId);
-          return {
-            type: merch?.label,
-            category: merch?.category,
-            designPrompt: `Design a ${merch?.label.toLowerCase()} for the "${theme?.name}" campaign. Theme: ${theme?.description}. Slogan: "${theme?.slogan}". Primary colors: ${selectedPalette?.colors.slice(0, 3).join(', ')}. Style: ${toneOfVoice}, professional, brand-consistent. Include subtle bubble tea elements and campaign messaging.`,
-            specifications: merch?.category === 'packaging' 
-              ? 'Print-ready design with bleed marks, CMYK color mode'
-              : 'Vector format, front and back designs, size chart compatible'
-          };
-        })
-      };
-      setGeneratedContent(mockContent);
-      toast.success('Content generated successfully!');
+      toast.error('Failed to generate content. Please try again.');
     } finally {
       setIsGeneratingContent(false);
     }
@@ -1101,11 +1062,20 @@ export default function CreateCampaign() {
                                     <span className="font-medium capitalize">{post.format}</span>
                                     <span className="text-xs bg-secondary px-2 py-0.5 rounded capitalize">{post.contentType}</span>
                                   </div>
+                                  {post.imageUrl && (
+                                    <div className="mb-3 rounded-lg overflow-hidden border">
+                                      <img 
+                                        src={post.imageUrl} 
+                                        alt={`Generated ${post.platform} content`}
+                                        className="w-full h-48 object-cover"
+                                      />
+                                    </div>
+                                  )}
                                   <p className="text-sm text-muted-foreground mb-2">{post.caption}</p>
                                   {post.hashtags && (
                                     <p className="text-xs text-primary">{post.hashtags}</p>
                                   )}
-                                  {post.imagePrompt && (
+                                  {post.imagePrompt && !post.imageUrl && (
                                     <div className="mt-3 p-2 bg-secondary/30 rounded text-xs">
                                       <p className="font-medium mb-1">Image Prompt:</p>
                                       <p className="text-muted-foreground">{post.imagePrompt}</p>
@@ -1171,10 +1141,21 @@ export default function CreateCampaign() {
                                   <span className="font-medium">{design.type}</span>
                                   <span className="text-xs bg-secondary px-2 py-0.5 rounded capitalize">{design.category}</span>
                                 </div>
-                                <div className="p-3 bg-secondary/30 rounded text-sm">
-                                  <p className="font-medium mb-1">Design Prompt:</p>
-                                  <p className="text-muted-foreground text-xs">{design.designPrompt}</p>
-                                </div>
+                                {design.imageUrl && (
+                                  <div className="mb-3 rounded-lg overflow-hidden border">
+                                    <img 
+                                      src={design.imageUrl} 
+                                      alt={`Generated ${design.type} design`}
+                                      className="w-full h-48 object-cover"
+                                    />
+                                  </div>
+                                )}
+                                {!design.imageUrl && (
+                                  <div className="p-3 bg-secondary/30 rounded text-sm">
+                                    <p className="font-medium mb-1">Design Prompt:</p>
+                                    <p className="text-muted-foreground text-xs">{design.designPrompt}</p>
+                                  </div>
+                                )}
                                 <p className="text-xs text-muted-foreground mt-2">{design.specifications}</p>
                               </div>
                             ))}
